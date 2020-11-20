@@ -46,8 +46,7 @@ public class MoveController {
             int newTailX = s.getLastTail().getX();
             int newTailY = s.getLastTail().getY();
             s.addNode(newTailX, newTailY, s.getLastTail().getNodeDirection());
-            field.getFieldMatrix()[newTailX][newTailY].setState(FieldNode.State.WITH_SNAKE_BODY);
-            field.getFieldMatrix()[newTailX][newTailY].addSnake(s);
+            field.getFieldMatrix()[newTailX][newTailY].addSnake(s, false);
             s.clearLastTail();
             s.setHadFood(false);
         }
@@ -109,8 +108,7 @@ public class MoveController {
             s.setHadFood(true);
             s.setLastTail(s.getBody().getLast());
         }
-        newFieldNode.setState(isHead ? FieldNode.State.WITH_SNAKE_HEAD : FieldNode.State.WITH_SNAKE_BODY);
-        newFieldNode.addSnake(s);
+        newFieldNode.addSnake(s, isHead);
         snakeNode.setX(movedX);
         snakeNode.setY(movedY);
     }

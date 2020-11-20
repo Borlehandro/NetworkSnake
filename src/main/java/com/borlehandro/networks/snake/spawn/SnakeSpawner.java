@@ -109,7 +109,6 @@ public class SnakeSpawner {
     private void updateBody(Snake s, int x, int y, Snake.Direction direction, boolean isHead) {
         s.addNode(x, y, direction);
         var fieldNode = field.getFieldMatrix()[x][y];
-        fieldNode.setState(isHead ? FieldNode.State.WITH_SNAKE_HEAD : FieldNode.State.WITH_SNAKE_BODY);
-        fieldNode.addSnake(s);
+        fieldNode.addSnake(s, isHead);
     }
 }

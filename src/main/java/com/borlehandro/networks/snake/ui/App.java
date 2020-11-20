@@ -1,6 +1,7 @@
 package com.borlehandro.networks.snake.ui;
 
 import com.borlehandro.networks.snake.game_controll.MoveController;
+import com.borlehandro.networks.snake.game_controll.SnakesCollisionHandler;
 import com.borlehandro.networks.snake.model.Field;
 import com.borlehandro.networks.snake.model.Snake;
 import com.borlehandro.networks.snake.spawn.FoodSpawner;
@@ -15,6 +16,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 
 public class App extends Application {
 
@@ -45,9 +47,21 @@ public class App extends Application {
         FoodSpawner foodSpawner = new FoodSpawner(field);
         MoveController controller = new MoveController(field);
         SnakeSpawner snakeSpawner = new SnakeSpawner(field, snakes);
+        SnakesCollisionHandler handler = new SnakesCollisionHandler(field, snakes.values());
 
         // Todo Test Eating with looping
         // Todo Check and handle snakes collisions
+        // For tests
+
+        snakeSpawner.spawnSnakeByCoordinates(4, 4, Snake.Direction.LEFT); // 1
+        snakeSpawner.spawnSnakeByCoordinates(5, 5, Snake.Direction.DOWN); // 2
+        snakeSpawner.spawnSnakeByCoordinates(4, 3, Snake.Direction.UP); // 3
+        // move 2
+        // move 3
+        // handle collisions
+        // Expect crash all
+
+        // End for tests
         Scanner in = new Scanner(System.in);
         while (in.hasNext()) {
             try {
@@ -75,6 +89,9 @@ public class App extends Application {
                     case "food" -> {
                         // foodSpawner.spawnFoodByCoordinates(Integer.parseInt(arguments[1]), Integer.parseInt(arguments[2]));
                         foodSpawner.spawnRandom();
+                    }
+                    case "handle" -> {
+                        handler.handleCollision(System.out::println);
                     }
                 }
             } catch (IndexOutOfBoundsException e) {
