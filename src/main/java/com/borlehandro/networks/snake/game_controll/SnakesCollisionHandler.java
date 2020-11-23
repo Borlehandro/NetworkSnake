@@ -16,7 +16,8 @@ public class SnakesCollisionHandler {
         this.snakes = snakes;
     }
 
-    // Todo check "tail on tail" situation
+    // Todo Check "tail on tail" situation
+    // Todo Check looped snake
     public void handleCollision(Consumer<Snake> onSnakeCrash) {
         var matrix = field.getFieldMatrix();
         Set<Snake> crashedSnakes = new HashSet<>();
@@ -33,7 +34,7 @@ public class SnakesCollisionHandler {
             snake.getBody().forEach(node -> {
                 var fieldNode = field.getFieldMatrix()[node.getX()][node.getY()];
                 fieldNode.removeSnake(snake);
-                fieldNode.setState(FieldNode.State.WITH_FOOD); // Todo do it randomly
+                fieldNode.setState(FieldNode.State.WITH_FOOD); // Todo Do it randomly
             });
             snakes.remove(snake);
             onSnakeCrash.accept(snake);

@@ -1,11 +1,34 @@
 package com.borlehandro.networks.snake.model;
 
+import com.borlehandro.networks.snake.protocol.Coordinates;
+
 import java.util.*;
 
 public class Snake {
 
     private boolean hadFood = false;
     private SnakeNode lastTail;
+    private SnakeState state;
+    public enum SnakeState {
+        ALIVE,
+        ZOMBIE
+    }
+
+    public Snake() {
+        state = SnakeState.ALIVE;
+    }
+
+    public void setZombie() {
+        state = SnakeState.ZOMBIE;
+    }
+
+    public SnakeState getState() {
+        return state;
+    }
+
+    public Direction getHeadDirection() {
+        return body.getFirst().getNodeDirection();
+    }
 
     public ArrayDeque<SnakeNode> getBody() {
         return body;
@@ -73,6 +96,10 @@ public class Snake {
 
         public void setNodeDirection(Direction newDirection) {
             this.nodeDirection = newDirection;
+        }
+
+        public Coordinates getCoordinates() {
+            return new Coordinates(x, y);
         }
 
         @Override

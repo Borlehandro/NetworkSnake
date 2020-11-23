@@ -16,12 +16,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.Set;
 
 public class App extends Application {
 
     private static Scene scene;
-    private static Map<Integer, Snake> snakes = new HashMap<>();
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -43,7 +41,9 @@ public class App extends Application {
         // launch();
 
         // Todo move it into Launcher
-        Field field = new Field(9);
+        // Todo Use players' id here
+        Map<Integer, Snake> snakes = new HashMap<>();
+        Field field = new Field(9, 9);
         FoodSpawner foodSpawner = new FoodSpawner(field);
         MoveController controller = new MoveController(field);
         SnakeSpawner snakeSpawner = new SnakeSpawner(field, snakes);

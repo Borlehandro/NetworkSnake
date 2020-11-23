@@ -100,8 +100,8 @@ public class MoveController {
             }
             default -> throw new IllegalArgumentException("Wrong direction value");
         }
-        movedX = field.toLoop(movedX);
-        movedY = field.toLoop(movedY);
+        movedX = field.toLoop(movedX, Field.Axis.X);
+        movedY = field.toLoop(movedY, Field.Axis.Y);
 
         var newFieldNode = field.getFieldMatrix()[movedX][movedY];
         if(newFieldNode.getState().equals(FieldNode.State.WITH_FOOD)) {

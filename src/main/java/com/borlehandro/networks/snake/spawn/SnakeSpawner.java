@@ -42,8 +42,8 @@ public class SnakeSpawner {
             int x = randomFieldNode.getX();
             int y = randomFieldNode.getY();
             square:
-            for (int squareI = field.toLoop(x - 2), counterI = 0; counterI < 5; squareI = field.toLoop(squareI + 1), counterI++) {
-                for (int squareJ = field.toLoop(y - 2), counterJ = 0; counterJ < 5; squareJ = field.toLoop(squareJ + 1), counterJ++) {
+            for (int squareI = field.toLoop(x - 2, Field.Axis.X), counterI = 0; counterI < 5; squareI = field.toLoop(squareI + 1, Field.Axis.X), counterI++) {
+                for (int squareJ = field.toLoop(y - 2, Field.Axis.Y), counterJ = 0; counterJ < 5; squareJ = field.toLoop(squareJ + 1, Field.Axis.Y), counterJ++) {
                     var state = matrix[squareI][squareJ].getState();
                     boolean cond = !state.equals(FieldNode.State.WITH_SNAKE_BODY) && !state.equals(FieldNode.State.WITH_SNAKE_HEAD);
                     checkMark = cond;
@@ -92,8 +92,8 @@ public class SnakeSpawner {
             }
             default -> throw new IllegalArgumentException("Wrong direction value");
         }
-        tailX = field.toLoop(tailX);
-        tailY = field.toLoop(tailY);
+        tailX = field.toLoop(tailX, Field.Axis.X);
+        tailY = field.toLoop(tailY, Field.Axis.Y);
         updateBody(s, headX, headY, direction, true); // Head node
         updateBody(s, tailX, tailY, direction, false); // Body node
         int id = newSnakeId();
