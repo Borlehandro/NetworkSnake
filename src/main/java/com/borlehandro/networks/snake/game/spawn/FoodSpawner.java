@@ -1,21 +1,26 @@
-package com.borlehandro.networks.snake.spawn;
+package com.borlehandro.networks.snake.game.spawn;
 
+import com.borlehandro.networks.snake.PlayersRepository;
 import com.borlehandro.networks.snake.model.Field;
 import com.borlehandro.networks.snake.model.FieldNode;
+import com.borlehandro.networks.snake.model.Game;
+import com.borlehandro.networks.snake.protocol.GameConfig;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 public class FoodSpawner {
     private final Field field;
-    private final int RANDOM_FOOD_NUMBER = 12;
+    private final int staticFood;
+    private final int foodPerPlayer;
+    private final PlayersRepository repository = PlayersRepository.getInstance();
 
-    public FoodSpawner(Field field) {
+    public FoodSpawner(Field field, GameConfig config) {
         this.field = field;
+        staticFood = config.getFoodStatic();
+        foodPerPlayer = config.getFoodPerPlayer();
     }
 
     public boolean spawnFoodByCoordinates(int x, int y) {
@@ -38,7 +43,7 @@ public class FoodSpawner {
         // Select empty rows
         matrixCopy.stream()
                 .filter(fieldNode -> fieldNode.getState().equals(FieldNode.State.EMPTY))
-                .limit(RANDOM_FOOD_NUMBER)
+                .limit(staticFood + foodPerPlayer * repository.getPlayersNumber())
                 .forEach(fieldNode -> fieldNode.setState(FieldNode.State.WITH_FOOD));
     }
 

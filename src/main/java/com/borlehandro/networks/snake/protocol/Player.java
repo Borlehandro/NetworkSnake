@@ -97,7 +97,7 @@ public class Player {
         }
 
         public Optional<Player> build() {
-            if (name != null && id > 0 && ipAddress != null && port > 0 && role != null) {
+            if (name != null && id >= 0 && ipAddress != null && port > 0 && role != null) {
                 var player = new Player(name, id, ipAddress, port, role);
                 player.setScore(score);
                 return Optional.of(player);

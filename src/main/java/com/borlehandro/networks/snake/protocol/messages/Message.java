@@ -13,5 +13,21 @@ public abstract class Message {
         this.receiverId = receiverId;
     }
 
+    public long getMessageNumber() {
+        return messageNumber;
+    }
+
+    public int getSenderId() {
+        return senderId;
+    }
+
+    public int getReceiverId() {
+        return receiverId;
+    }
+
+    public MessageType getType() {
+        return type;
+    }
+
     // public byte[] serialize();
 }

@@ -27,14 +27,14 @@ public class PropertiesLoader {
     public GameConfig loadGameConfig() {
         return GameConfig
                 .builder()
-                .withWidth((int)properties.getOrDefault("width", 40))
-                .withHeight((int)properties.getOrDefault("height", 40))
-                .withFoodStatic((int)properties.getOrDefault("food_static", 1))
-                .withFoodPerPlayer((int)properties.getOrDefault("food_per_player", 1))
-                .withStateDelayMillis((int)properties.getOrDefault("state_delay_ms", 1000))
-                .withDeadFoodProb((double)properties.getOrDefault("dead_food_prob", 0.1))
-                .withPingDelayMillis((int)properties.getOrDefault("ping_delay_ms", 100))
-                .withNodeTimeoutMillis((int)properties.getOrDefault("food_per_player", 800))
+                .withWidth(Integer.parseInt(properties.getOrDefault("width", 40).toString()))
+                .withHeight(Integer.parseInt(properties.getOrDefault("height", 40).toString()))
+                .withFoodStatic(Integer.parseInt(properties.getOrDefault("food_static", 1).toString()))
+                .withFoodPerPlayer(Integer.parseInt(properties.getOrDefault("food_per_player", 1).toString()))
+                .withStateDelayMillis(Integer.parseInt(properties.getOrDefault("state_delay_ms", 1000).toString()))
+                .withDeadFoodProb(Double.parseDouble(properties.getOrDefault("dead_food_prob", 0.1).toString()))
+                .withPingDelayMillis(Integer.parseInt(properties.getOrDefault("ping_delay_ms", 100).toString()))
+                .withNodeTimeoutMillis(Integer.parseInt(properties.getOrDefault("node_timeout_millis", 800).toString()))
                 .build();
     }
 

@@ -20,11 +20,11 @@ public class FieldNode extends Node {
 
     public boolean isOccupiedOnlyByThisOne(Snake s) {
         return (bodiesOnTheNode.size() == 1 && bodiesOnTheNode.contains(s))
-                || (headsOnTheNode.size() == 1 && headsOnTheNode.contains(s));
+                ^ (headsOnTheNode.size() == 1 && headsOnTheNode.contains(s));
     }
 
     public void addSnake(Snake s, boolean isHead) {
-        if(isHead) {
+        if (isHead) {
             state = State.WITH_SNAKE_HEAD;
             headsOnTheNode.add(s);
         } else {
@@ -33,9 +33,16 @@ public class FieldNode extends Node {
         }
     }
 
+    public void removeSnake(Snake s, boolean isHead) {
+        if (isHead)
+            headsOnTheNode.remove(s);
+        else
+            bodiesOnTheNode.remove(s);
+    }
+
     public void removeSnake(Snake s) {
-        bodiesOnTheNode.remove(s);
         headsOnTheNode.remove(s);
+        bodiesOnTheNode.remove(s);
     }
 
     public State getState() {

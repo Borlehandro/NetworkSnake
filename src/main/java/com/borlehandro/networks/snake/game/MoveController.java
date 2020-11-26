@@ -1,4 +1,4 @@
-package com.borlehandro.networks.snake.game_controll;
+package com.borlehandro.networks.snake.game;
 
 import com.borlehandro.networks.snake.model.Field;
 import com.borlehandro.networks.snake.model.FieldNode;
@@ -43,6 +43,9 @@ public class MoveController {
             moveNodeForward(snakeNode, s);
         }
         if (s.hadFood()) {
+            if(s.getBody().size() == field.getFieldMatrix().length - 1) {
+                System.out.println("WARN!");
+            }
             int newTailX = s.getLastTail().getX();
             int newTailY = s.getLastTail().getY();
             s.addNode(newTailX, newTailY, s.getLastTail().getNodeDirection());
@@ -77,9 +80,9 @@ public class MoveController {
         var fieldNode = field.getFieldMatrix()[snakeNode.getX()][snakeNode.getY()];
         if (fieldNode.isOccupiedOnlyByThisOne(s)) {
             fieldNode.setState(FieldNode.State.EMPTY);
-            fieldNode.removeSnake(s);
         }
         boolean isHead = s.getBody().getFirst().equals(snakeNode);
+        fieldNode.removeSnake(s, isHead);
         int movedX, movedY;
         switch (snakeNode.getNodeDirection()) {
             case DOWN -> {

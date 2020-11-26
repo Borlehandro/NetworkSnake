@@ -1,4 +1,4 @@
-package com.borlehandro.networks.snake.spawn;
+package com.borlehandro.networks.snake.game.spawn;
 
 import com.borlehandro.networks.snake.model.Field;
 import com.borlehandro.networks.snake.model.FieldNode;
@@ -17,14 +17,15 @@ public class SnakeSpawner {
         this.snakes = snakes;
     }
 
-    public int spawnRandom() {
+    public boolean spawnRandom(int playerId) {
         var opt = findSpawnPlace();
         if (opt.isPresent()) {
             var direction = Snake.Direction
                     .values()[new Random().nextInt(Snake.Direction.values().length)];
-            return spawnSnakeByCoordinates(opt.get().getFirst(), opt.get().getSecond(), direction);
+            spawnSnakeByCoordinates(opt.get().getFirst(), opt.get().getSecond(), direction, playerId);
+            return true;
         } else {
-            return -1;
+            return false;
         }
     }
 
@@ -60,10 +61,8 @@ public class SnakeSpawner {
 
     /**
      * Create Snake, spawn it in particular field node and insert into snakes map
-     *
-     * @return integer "snake id" in snakes map or -1 if snake could not be created
      */
-    public int spawnSnakeByCoordinates(int headX, int headY, Snake.Direction direction) {
+    public void spawnSnakeByCoordinates(int headX, int headY, Snake.Direction direction, int playerId) {
         Snake s = new Snake();
         int tailX, tailY;
         switch (direction) {
@@ -96,14 +95,7 @@ public class SnakeSpawner {
         tailY = field.toLoop(tailY, Field.Axis.Y);
         updateBody(s, headX, headY, direction, true); // Head node
         updateBody(s, tailX, tailY, direction, false); // Body node
-        int id = newSnakeId();
-        snakes.put(id, s);
-        return id;
-    }
-
-    // Todo Generate more useful id
-    private int newSnakeId() {
-        return ++snakesNumber;
+        snakes.put(playerId, s);
     }
 
     private void updateBody(Snake s, int x, int y, Snake.Direction direction, boolean isHead) {

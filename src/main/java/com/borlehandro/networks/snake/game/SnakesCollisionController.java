@@ -1,4 +1,4 @@
-package com.borlehandro.networks.snake.game_controll;
+package com.borlehandro.networks.snake.game;
 
 import com.borlehandro.networks.snake.model.Field;
 import com.borlehandro.networks.snake.model.FieldNode;
@@ -7,11 +7,11 @@ import com.borlehandro.networks.snake.model.Snake;
 import java.util.*;
 import java.util.function.Consumer;
 
-public class SnakesCollisionHandler {
+public class SnakesCollisionController {
     private final Field field;
     private final Collection<Snake> snakes;
 
-    public SnakesCollisionHandler(Field field, Collection<Snake> snakes) {
+    public SnakesCollisionController(Field field, Collection<Snake> snakes) {
         this.field = field;
         this.snakes = snakes;
     }

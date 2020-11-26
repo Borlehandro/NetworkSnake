@@ -65,4 +65,36 @@ public class GameConfig {
             return this;
         }
     }
+
+    public int getFieldWidth() {
+        return fieldWidth;
+    }
+
+    public int getFieldHeight() {
+        return fieldHeight;
+    }
+
+    public int getFoodStatic() {
+        return foodStatic;
+    }
+
+    public int getFoodPerPlayer() {
+        return foodPerPlayer;
+    }
+
+    public int getStateDelayMillis() {
+        return stateDelayMillis;
+    }
+
+    public int getPingDelayMillis() {
+        return pingDelayMillis;
+    }
+
+    public double getDeadFoodProb() {
+        return deadFoodProb;
+    }
+
+    public int getNodeTimeoutMillis() {
+        return nodeTimeoutMillis;
+    }
 }

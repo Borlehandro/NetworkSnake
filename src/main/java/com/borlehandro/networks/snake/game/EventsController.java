@@ -1,4 +1,4 @@
-package com.borlehandro.networks.snake.game_controll;
+package com.borlehandro.networks.snake.game;
 
 import java.io.IOException;
 import java.util.Properties;
