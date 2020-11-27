@@ -5,6 +5,8 @@ public class Field {
     private final int height;
     private final int wight;
 
+    private int currentFood;
+
     // Field nodes table
     private final FieldNode[][] fieldMatrix;
 
@@ -18,6 +20,18 @@ public class Field {
                 fieldMatrix[i][j] = new FieldNode(i, j);
             }
         }
+    }
+
+    public int getCurrentFood() {
+        return currentFood;
+    }
+
+    public void addFood(int newFood) {
+        this.currentFood += newFood;
+    }
+
+    public void decrementFood() {
+        this.currentFood--;
     }
 
     public enum Axis {

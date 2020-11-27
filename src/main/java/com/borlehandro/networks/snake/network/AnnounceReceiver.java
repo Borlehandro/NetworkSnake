@@ -1,9 +1,11 @@
 package com.borlehandro.networks.snake.network;
 
+import com.borlehandro.networks.snake.message_handlers.MessagesHandler;
 import com.borlehandro.networks.snake.protocol.messages.Message;
 import com.borlehandro.networks.snake.protocol.messages.factory.AnnouncementStateMessageFactory;
 import com.borlehandro.networks.snake.protocol.messages.state.AnnouncementMessage;
 import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
 
 import java.io.IOException;
 import java.net.*;
@@ -11,25 +13,23 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Send multicast messages
+ * Receive multicast messages
  */
 public class AnnounceReceiver {
-    private static final int SENDING_TIMEOUT_MILLIS = 1000;
-    private final int senderId;
     private final MulticastSocket socket;
     private final InetAddress groupAddress;
-    private final AnnouncementStateMessageFactory factory;
     private final ExecutorService sendExecutor = Executors.newSingleThreadExecutor();
+    private final MessagesHandler messagesHandler;
 
-    // TODO RECEIVE ANNOUNCES!
-    public AnnounceReceiver(AnnouncementStateMessageFactory factory,
-                            InetAddress networkInterfaceAddress,
-                            int senderId) throws IOException {
-        this.factory = factory;
-        this.senderId = senderId;
+    public AnnounceReceiver(MessagesHandler handler) throws IOException {
         groupAddress = InetAddress.getByName("239.192.0.4");
         socket = new MulticastSocket(9192);
-        socket.joinGroup(new InetSocketAddress(groupAddress, 9192), NetworkInterface.getByInetAddress(networkInterfaceAddress));
+        // Todo test network interface start
+        // Todo use correct interface
+        socket.joinGroup(new InetSocketAddress(groupAddress, 9192),
+                NetworkInterface.getByInetAddress(InetAddress.getLocalHost())
+        );
+        this.messagesHandler = handler;
     }
 
     public void start() {
@@ -40,8 +40,10 @@ public class AnnounceReceiver {
                     byte[] buffer = new byte[1024]; // 1 Kb
                     var receivedDatagram = new DatagramPacket(buffer, buffer.length);
                     socket.receive(receivedDatagram);
-                    Message message = gson.fromJson(new String(buffer), AnnouncementMessage.class);
-                    // Todo send to announce handler
+                    String s = new String(buffer, 0, receivedDatagram.getLength());
+                    Message message = gson.fromJson(s, AnnouncementMessage.class);
+                    var socketAddress = new InetSocketAddress(receivedDatagram.getAddress(), receivedDatagram.getPort());
+                    messagesHandler.handleMessage(message, socketAddress);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

@@ -7,6 +7,7 @@ import com.borlehandro.networks.snake.model.Field;
 import com.borlehandro.networks.snake.model.Snake;
 import com.borlehandro.networks.snake.game.spawn.FoodSpawner;
 import com.borlehandro.networks.snake.game.spawn.SnakeSpawner;
+import com.borlehandro.networks.snake.protocol.GameConfig;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -48,7 +49,8 @@ public class App extends Application {
         FoodSpawner foodSpawner = new FoodSpawner(field, PropertiesLoader.getInstance().loadGameConfig());
         MoveController controller = new MoveController(field);
         SnakeSpawner snakeSpawner = new SnakeSpawner(field, snakes);
-        SnakesCollisionController handler = new SnakesCollisionController(field, snakes.values());
+        // O_o
+        SnakesCollisionController handler = new SnakesCollisionController(field, snakes.values(), GameConfig.builder().build());
 
         // Todo Test Eating with looping
         // Todo Check and handle snakes collisions

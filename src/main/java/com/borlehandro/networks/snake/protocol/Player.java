@@ -1,25 +1,24 @@
 package com.borlehandro.networks.snake.protocol;
 
+import java.util.Objects;
 import java.util.Optional;
 
 public class Player {
     private final String name;
-    private final int id;
+    // Set when add
+    private int id;
     private final String ipAddress;
     private final int port;
-    private final NodeRole role;
+    // Set when add
+    private NodeRole role;
     private int score;
 
     private Player(String name,
-                   int id,
                    String ipAddress,
-                   int port,
-                   NodeRole role) {
+                   int port) {
         this.name = name;
-        this.id = id;
         this.ipAddress = ipAddress;
         this.port = port;
-        this.role = role;
     }
 
     public void setScore(int score) {
@@ -54,10 +53,18 @@ public class Player {
         return new Builder();
     }
 
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setRole(NodeRole role) {
+        this.role = role;
+    }
+
     public static class Builder {
 
         private String name;
-        private int id;
+        private int id = -1;
         private String ipAddress;
         private int port;
         private NodeRole role;
@@ -97,13 +104,38 @@ public class Player {
         }
 
         public Optional<Player> build() {
-            if (name != null && id >= 0 && ipAddress != null && port > 0 && role != null) {
-                var player = new Player(name, id, ipAddress, port, role);
+            if (name != null && ipAddress != null && port > 0) {
+                var player = new Player(name, ipAddress, port);
                 player.setScore(score);
                 return Optional.of(player);
             } else {
                 return Optional.empty();
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        return "Player{" +
+                "name='" + name + '\'' +
+                ", id=" + id +
+                ", ipAddress='" + ipAddress + '\'' +
+                ", port=" + port +
+                ", role=" + role +
+                ", score=" + score +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Player)) return false;
+        Player player = (Player) o;
+        return id == player.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

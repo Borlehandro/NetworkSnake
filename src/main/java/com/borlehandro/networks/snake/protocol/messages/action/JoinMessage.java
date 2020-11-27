@@ -11,4 +11,8 @@ public class JoinMessage extends ActionMessage {
         this.name = name;
         type = MessageType.JOIN_MESSAGE;
     }
+
+    public String getName() {
+        return name;
+    }
 }

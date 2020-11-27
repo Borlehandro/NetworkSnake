@@ -17,4 +17,12 @@ public class AnnouncementMessage extends StateMessage {
         this.gameConfig = gameConfig;
         type = MessageType.ANNOUNCEMENT_MESSAGE;
     }
+
+    public GameConfig getGameConfig() {
+        return gameConfig;
+    }
+
+    public List<Player> getPlayers() {
+        return players;
+    }
 }

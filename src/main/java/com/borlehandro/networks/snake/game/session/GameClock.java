@@ -1,12 +1,12 @@
-package com.borlehandro.networks.snake.game;
+package com.borlehandro.networks.snake.game.session;
 
 import com.borlehandro.networks.snake.protocol.GameConfig;
 
 public class GameClock extends Thread {
     private final int TICK_TIMEOUT;
-    private final GameSession session;
+    private final ServerSession session;
 
-    public GameClock(GameSession session, GameConfig config) {
+    public GameClock(ServerSession session, GameConfig config) {
         TICK_TIMEOUT = config.getStateDelayMillis();
         this.session = session;
     }

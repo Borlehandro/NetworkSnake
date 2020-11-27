@@ -14,6 +14,8 @@ public class Pinger {
     private final NetworkActionsManager manager;
     private final ExecutorService pingExecutor = Executors.newSingleThreadExecutor();
     private final int senderId;
+
+    // TODO Refactor all this code
     public Pinger(GameConfig config, NetworkActionsManager manager, int senderId) {
         pingDelayMillis = config.getPingDelayMillis();
         this.manager = manager;
@@ -23,15 +25,15 @@ public class Pinger {
     public void start() {
         pingExecutor.execute(() -> {
             while (!Thread.interrupted()) {
-                try {
-                    Thread.sleep(pingDelayMillis);
-                } catch (InterruptedException e) {
-                    break;
-                }
-                int masterId = manager.getMasterId();
-                if(masterId > 0) {
-                    manager.putMessage(new PingMessage(MessagesCounter.next(), senderId, masterId));
-                }
+//                try {
+//                    Thread.sleep(pingDelayMillis);
+//                } catch (InterruptedException e) {
+//                    break;
+//                }
+//                int masterId = manager.getMasterId();
+//                if(masterId > 0) {
+//                    manager.putSendTask(new PingMessage(MessagesCounter.next(), senderId, masterId));
+//                }
             }
         });
     }

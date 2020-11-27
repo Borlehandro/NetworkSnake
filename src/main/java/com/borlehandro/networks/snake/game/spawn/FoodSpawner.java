@@ -1,9 +1,8 @@
 package com.borlehandro.networks.snake.game.spawn;
 
-import com.borlehandro.networks.snake.PlayersRepository;
+import com.borlehandro.networks.snake.PlayersServersRepository;
 import com.borlehandro.networks.snake.model.Field;
 import com.borlehandro.networks.snake.model.FieldNode;
-import com.borlehandro.networks.snake.model.Game;
 import com.borlehandro.networks.snake.protocol.GameConfig;
 
 import java.util.ArrayList;
@@ -15,7 +14,7 @@ public class FoodSpawner {
     private final Field field;
     private final int staticFood;
     private final int foodPerPlayer;
-    private final PlayersRepository repository = PlayersRepository.getInstance();
+    private final PlayersServersRepository repository = PlayersServersRepository.getInstance();
 
     public FoodSpawner(Field field, GameConfig config) {
         this.field = field;
@@ -40,11 +39,17 @@ public class FoodSpawner {
             matrixCopy.addAll(Arrays.asList(row));
         }
         Collections.shuffle(matrixCopy);
-        // Select empty rows
-        matrixCopy.stream()
-                .filter(fieldNode -> fieldNode.getState().equals(FieldNode.State.EMPTY))
-                .limit(staticFood + foodPerPlayer * repository.getPlayersNumber())
-                .forEach(fieldNode -> fieldNode.setState(FieldNode.State.WITH_FOOD));
+        // Spawn
+        try {
+            matrixCopy.stream()
+                    .filter(fieldNode -> fieldNode.getState().equals(FieldNode.State.EMPTY))
+                    .limit((staticFood + foodPerPlayer * repository.getPlayersNumber()) - field.getCurrentFood())
+                    .forEach(fieldNode -> {
+                        fieldNode.setState(FieldNode.State.WITH_FOOD);
+                        field.addFood(1);
+                    });
+        } catch (IllegalArgumentException ignored) {
+        }
     }
 
 }

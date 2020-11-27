@@ -12,6 +12,7 @@ public class CollisionHandler {
     }
 
     public static void handle(Snake s) {
-        // Todo send message and handle collision
+        System.err.println("COLLISION on " + s);
+        // Todo handle collision
     }
 }

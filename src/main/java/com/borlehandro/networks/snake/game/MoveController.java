@@ -108,6 +108,7 @@ public class MoveController {
 
         var newFieldNode = field.getFieldMatrix()[movedX][movedY];
         if(newFieldNode.getState().equals(FieldNode.State.WITH_FOOD)) {
+            field.decrementFood();
             s.setHadFood(true);
             s.setLastTail(s.getBody().getLast());
         }

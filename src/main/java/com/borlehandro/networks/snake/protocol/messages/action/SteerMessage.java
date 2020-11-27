@@ -10,4 +10,8 @@ public class SteerMessage extends ActionMessage {
         this.direction = direction;
         type = MessageType.STEER_MESSAGE;
     }
+
+    public Snake.Direction getDirection() {
+        return direction;
+    }
 }

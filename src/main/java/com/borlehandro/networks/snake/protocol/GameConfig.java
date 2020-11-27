@@ -1,5 +1,7 @@
 package com.borlehandro.networks.snake.protocol;
 
+import java.util.Objects;
+
 public class GameConfig {
     private int fieldWidth = 40;
     private int fieldHeight = 40;
@@ -96,5 +98,39 @@ public class GameConfig {
 
     public int getNodeTimeoutMillis() {
         return nodeTimeoutMillis;
+    }
+
+    @Override
+    public String toString() {
+        return "GameConfig{" +
+                "fieldWidth=" + fieldWidth +
+                ", fieldHeight=" + fieldHeight +
+                ", foodStatic=" + foodStatic +
+                ", foodPerPlayer=" + foodPerPlayer +
+                ", stateDelayMillis=" + stateDelayMillis +
+                ", pingDelayMillis=" + pingDelayMillis +
+                ", deadFoodProb=" + deadFoodProb +
+                ", nodeTimeoutMillis=" + nodeTimeoutMillis +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof GameConfig)) return false;
+        GameConfig config = (GameConfig) o;
+        return fieldWidth == config.fieldWidth &&
+                fieldHeight == config.fieldHeight &&
+                foodStatic == config.foodStatic &&
+                foodPerPlayer == config.foodPerPlayer &&
+                stateDelayMillis == config.stateDelayMillis &&
+                pingDelayMillis == config.pingDelayMillis &&
+                Double.compare(config.deadFoodProb, deadFoodProb) == 0 &&
+                nodeTimeoutMillis == config.nodeTimeoutMillis;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(fieldWidth, fieldHeight, foodStatic, foodPerPlayer, stateDelayMillis, pingDelayMillis, deadFoodProb, nodeTimeoutMillis);
     }
 }
