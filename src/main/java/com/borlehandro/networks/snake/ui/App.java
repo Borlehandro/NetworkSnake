@@ -93,7 +93,7 @@ public class App extends Application {
                         foodSpawner.spawnRandom();
                     }
                     case "handle" -> {
-                        handler.handleCollision(System.out::println);
+                        handler.controlCollisions(System.out::println);
                     }
                 }
             } catch (IndexOutOfBoundsException e) {

@@ -29,5 +29,14 @@ public abstract class Message {
         return type;
     }
 
-    // public byte[] serialize();
+
+    @Override
+    public String toString() {
+        return "Message{" +
+                "messageNumber=" + messageNumber +
+                ", senderId=" + senderId +
+                ", receiverId=" + receiverId +
+                ", type=" + type +
+                '}';
+    }
 }

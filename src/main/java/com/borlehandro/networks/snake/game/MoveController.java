@@ -43,9 +43,6 @@ public class MoveController {
             moveNodeForward(snakeNode, s);
         }
         if (s.hadFood()) {
-            if(s.getBody().size() == field.getFieldMatrix().length - 1) {
-                System.out.println("WARN!");
-            }
             int newTailX = s.getLastTail().getX();
             int newTailY = s.getLastTail().getY();
             s.addNode(newTailX, newTailY, s.getLastTail().getNodeDirection());

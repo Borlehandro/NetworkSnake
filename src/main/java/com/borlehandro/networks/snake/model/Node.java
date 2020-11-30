@@ -1,7 +1,5 @@
 package com.borlehandro.networks.snake.model;
 
-import com.borlehandro.networks.snake.protocol.Coordinates;
-
 public class Node {
     protected int x;
     protected int y;

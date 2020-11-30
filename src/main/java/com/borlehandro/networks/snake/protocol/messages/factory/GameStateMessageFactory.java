@@ -16,36 +16,36 @@ import java.util.stream.Collectors;
 /**
  * Be careful it's Singleton
  */
-public class GameStateStateMessageFactory implements StateMessageFactory {
+public class GameStateMessageFactory implements StateMessageFactory {
     // In-game entities
     private final Map<Integer, Snake> snakeMap;
     private final GameConfig gameConfig;
-    private final List<Player> players;
+    private final Collection<Player> players;
     private final Field field;
     private final AtomicInteger stateOrder;
 
 
-    private static GameStateStateMessageFactory INSTANCE;
+    private static GameStateMessageFactory INSTANCE;
 
-    public static Optional<GameStateStateMessageFactory> getInstance() {
+    public static Optional<GameStateMessageFactory> getInstance() {
         return Optional.ofNullable(INSTANCE);
     }
 
-    public static GameStateStateMessageFactory getInstance(Map<Integer, Snake> snakeMap,
-                                                           GameConfig gameConfig,
-                                                           List<Player> players,
-                                                           Field field,
-                                                           AtomicInteger stateOrder) {
+    public static GameStateMessageFactory getInstance(Map<Integer, Snake> snakeMap,
+                                                      GameConfig gameConfig,
+                                                      Collection<Player> players,
+                                                      Field field,
+                                                      AtomicInteger stateOrder) {
         if (INSTANCE == null) {
-            INSTANCE = new GameStateStateMessageFactory(snakeMap, gameConfig, players, field, stateOrder);
+            INSTANCE = new GameStateMessageFactory(snakeMap, gameConfig, players, field, stateOrder);
         }
         return INSTANCE;
     }
 
-    private GameStateStateMessageFactory(Map<Integer, Snake> snakeMap,
-                                         GameConfig gameConfig,
-                                         List<Player> players,
-                                         Field field, AtomicInteger stateOrder) {
+    private GameStateMessageFactory(Map<Integer, Snake> snakeMap,
+                                    GameConfig gameConfig,
+                                    Collection<Player> players,
+                                    Field field, AtomicInteger stateOrder) {
         this.snakeMap = snakeMap;
         this.gameConfig = gameConfig;
         this.players = players;

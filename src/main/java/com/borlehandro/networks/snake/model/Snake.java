@@ -111,4 +111,8 @@ public class Snake {
                     '}';
         }
     }
+
+    public void setChangeDirectionNode(LinkedHashMap<Node, Direction> changeDirectionNode) {
+        this.changeDirectionNode = changeDirectionNode;
+    }
 }

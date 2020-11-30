@@ -2,10 +2,9 @@ package com.borlehandro.networks.snake.network;
 
 import com.borlehandro.networks.snake.message_handlers.MessagesHandler;
 import com.borlehandro.networks.snake.protocol.messages.Message;
-import com.borlehandro.networks.snake.protocol.messages.factory.AnnouncementStateMessageFactory;
 import com.borlehandro.networks.snake.protocol.messages.state.AnnouncementMessage;
 import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
+import com.google.gson.JsonSyntaxException;
 
 import java.io.IOException;
 import java.net.*;
@@ -37,7 +36,7 @@ public class AnnounceReceiver {
             Gson gson = new Gson();
             while (!Thread.interrupted()) {
                 try {
-                    byte[] buffer = new byte[1024]; // 1 Kb
+                    byte[] buffer = new byte[2048]; // 2 Kb
                     var receivedDatagram = new DatagramPacket(buffer, buffer.length);
                     socket.receive(receivedDatagram);
                     String s = new String(buffer, 0, receivedDatagram.getLength());
@@ -46,7 +45,8 @@ public class AnnounceReceiver {
                     messagesHandler.handleMessage(message, socketAddress);
                 } catch (IOException e) {
                     e.printStackTrace();
-                }
+                    // Todo fix json exception
+                } catch(JsonSyntaxException ignore) {}
             }
         });
     }

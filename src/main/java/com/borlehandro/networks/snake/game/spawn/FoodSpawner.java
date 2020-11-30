@@ -1,6 +1,6 @@
 package com.borlehandro.networks.snake.game.spawn;
 
-import com.borlehandro.networks.snake.PlayersServersRepository;
+import com.borlehandro.networks.snake.game.repository.PlayersServersRepository;
 import com.borlehandro.networks.snake.model.Field;
 import com.borlehandro.networks.snake.model.FieldNode;
 import com.borlehandro.networks.snake.protocol.GameConfig;

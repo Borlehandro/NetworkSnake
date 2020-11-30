@@ -14,4 +14,12 @@ public class RoleChangeMessage extends ActionMessage {
         this.receiverRole = receiverRole;
         type = MessageType.ROLE_CHANGE_MESSAGE;
     }
+
+    public NodeRole getSenderRole() {
+        return senderRole;
+    }
+
+    public NodeRole getReceiverRole() {
+        return receiverRole;
+    }
 }

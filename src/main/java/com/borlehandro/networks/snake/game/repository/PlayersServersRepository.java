@@ -1,18 +1,18 @@
-package com.borlehandro.networks.snake;
+package com.borlehandro.networks.snake.game.repository;
 
 import com.borlehandro.networks.snake.model.ServerItem;
 import com.borlehandro.networks.snake.protocol.Player;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class PlayersServersRepository {
     private int playersNumber = 0;
     private int serversNumber = 0;
     private final Map<Integer, Player> playersMap = new HashMap<>(); // user id - player
+    private final Map<Integer, Long> lastReceivedMessageTimeMillis = new HashMap<>(); // id - last received message time
+    private final Map<Integer, Long> lastSentMessageTimeMillis = new HashMap<>(); // id - last sent message time
     private final Map<Integer, ServerItem> serversMap = new HashMap<>(); // server id - socket address
     private int serverToConnectId = -1;
     private int currentServerId = -1;
@@ -31,6 +31,12 @@ public class PlayersServersRepository {
     public List<Player> getPlayersCopy() {
         synchronized (playersMap) {
             return List.copyOf(playersMap.values());
+        }
+    }
+
+    public Collection<Player> getPlayers() {
+        synchronized (playersMap) {
+            return playersMap.values();
         }
     }
 
@@ -55,10 +61,16 @@ public class PlayersServersRepository {
         return playerId;
     }
 
+    public void putPlayer(Player player) {
+        synchronized (playersMap) {
+            playersMap.put(player.getId(), player);
+        }
+    }
+
     public int addServerItem(ServerItem serverItem) {
         int id = -1;
         synchronized (serversMap) {
-            if(!serversMap.containsValue(serverItem)) {
+            if (!serversMap.containsValue(serverItem)) {
                 id = nextServerId();
                 serversMap.put(id, serverItem);
             }
@@ -66,9 +78,46 @@ public class PlayersServersRepository {
         }
     }
 
-    public SocketAddress findPlayerAddressById(int id) {
+    // Todo test optional
+    public synchronized Optional<SocketAddress> findPlayerAddressById(int id) {
         var player = playersMap.get(id);
-        return new InetSocketAddress(player.getIpAddress(), player.getPort());
+        if(player != null) {
+            return Optional.of(new InetSocketAddress(player.getIpAddress(), player.getPort()));
+        }
+        return Optional.empty();
+    }
+
+    public void updateLastReceivedMessageTimeMillis(int id, long millis, boolean isNew) {
+        synchronized (lastReceivedMessageTimeMillis) {
+            lastReceivedMessageTimeMillis.put(id, millis);
+        }
+    }
+
+    public void updateLastSentMessageTimeMillis(int id, long millis, boolean isNew) {
+        synchronized (lastSentMessageTimeMillis) {
+            // Todo test replace.
+            //  Before this action you should add id into this map.
+            lastSentMessageTimeMillis.replace(id, millis);
+        }
+    }
+
+    public void updateAllSentMessageTimes(long millis) {
+        synchronized (lastSentMessageTimeMillis) {
+            // Todo test replace.
+            //  Before this action you should add id into this map.
+            //  It's too long.
+            for (Map.Entry<Integer, Long> entry : lastSentMessageTimeMillis.entrySet()) {
+                entry.setValue(millis);
+            }
+        }
+    }
+
+    public Map<Integer, Long> getLastReceivedMessageTimeMillis() {
+        return lastReceivedMessageTimeMillis;
+    }
+
+    public Map<Integer, Long> getLastSentMessageTimeMillis() {
+        return lastSentMessageTimeMillis;
     }
 
     public SocketAddress findServerSocketAddressById(int id) {
@@ -89,6 +138,11 @@ public class PlayersServersRepository {
 
     public void setServerToConnectId(int id) {
         serverToConnectId = id;
+    }
+
+    public void removePlayer(int id) {
+        playersMap.remove(id);
+        lastReceivedMessageTimeMillis.remove(id);
     }
 
     public ServerItem acceptServer() {

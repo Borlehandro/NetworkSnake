@@ -11,22 +11,22 @@ import java.util.Optional;
 /**
  * Singleton
  */
-public class AnnouncementStateMessageFactory implements StateMessageFactory {
+public class AnnouncementMessageFactory implements StateMessageFactory {
     private final List<Player> players;
     private final GameConfig config;
-    private static AnnouncementStateMessageFactory INSTANCE;
-    private AnnouncementStateMessageFactory(List<Player> players, GameConfig config) {
+    private static AnnouncementMessageFactory INSTANCE;
+    private AnnouncementMessageFactory(List<Player> players, GameConfig config) {
         this.players = players;
         this.config = config;
     }
 
-    public static Optional<AnnouncementStateMessageFactory> getInstance() {
+    public static Optional<AnnouncementMessageFactory> getInstance() {
         return Optional.ofNullable(INSTANCE);
     }
 
-    public static AnnouncementStateMessageFactory getInstance(List<Player> players, GameConfig config) {
+    public static AnnouncementMessageFactory getInstance(List<Player> players, GameConfig config) {
         if(INSTANCE == null)
-            INSTANCE = new AnnouncementStateMessageFactory(players, config);
+            INSTANCE = new AnnouncementMessageFactory(players, config);
         return INSTANCE;
     }
 

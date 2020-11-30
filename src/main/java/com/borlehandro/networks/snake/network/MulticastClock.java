@@ -1,6 +1,6 @@
 package com.borlehandro.networks.snake.network;
 
-import com.borlehandro.networks.snake.PlayersServersRepository;
+import com.borlehandro.networks.snake.game.repository.PlayersServersRepository;
 import com.borlehandro.networks.snake.protocol.GameConfig;
 import com.borlehandro.networks.snake.protocol.messages.state.AnnouncementMessage;
 
