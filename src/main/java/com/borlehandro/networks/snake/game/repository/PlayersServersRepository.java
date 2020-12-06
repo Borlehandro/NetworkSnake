@@ -46,8 +46,16 @@ public class PlayersServersRepository {
         }
     }
 
+    public void clearServers() {
+        serversMap.clear();
+    }
+
     public int getPlayersNumber() {
         return playersNumber;
+    }
+
+    public void setPlayersNumber(int number) {
+        this.playersNumber = number;
     }
 
     /**
@@ -64,6 +72,14 @@ public class PlayersServersRepository {
     public void putPlayer(Player player) {
         synchronized (playersMap) {
             playersMap.put(player.getId(), player);
+        }
+    }
+
+    public void changePlayerId(int currentId, int newId) {
+        synchronized (playersMap) {
+            var currentPlayer = playersMap.remove(currentId);
+            currentPlayer.setId(newId);
+            playersMap.put(newId, currentPlayer);
         }
     }
 

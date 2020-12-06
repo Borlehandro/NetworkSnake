@@ -36,28 +36,34 @@ public class ServerMessagesHandler extends MessagesHandler {
                         }
                         case JOIN_MESSAGE -> {
                             JoinMessage m = (JoinMessage) message;
-                            System.err.println("JOIN");
-                            session.addPlayer(Player
-                                            .builder()
-                                            .withName(m.getName())
-                                            .withIpAddress(socketAddress.getHostName())
-                                            .withPort(socketAddress.getPort())
-                                            .build()
-                                            .get(),
-                                    m.getMessageNumber());
+                            System.err.println("JOIN " + System.currentTimeMillis());
+                            Player player = Player
+                                    .builder()
+                                    .withName(m.getName())
+                                    .withIpAddress(socketAddress.getHostString())
+                                    .withPort(socketAddress.getPort())
+                                    .build()
+                                    .get();
+                            long messageNumber = m.getMessageNumber();
+                            // ...
+                            synchronized (session) {
+                                // System.err.println("JOIN get session monitor" + System.currentTimeMillis());
+                                session.addPlayer(player, messageNumber);
+                            }
+                            // System.err.println("JOIN END " + System.currentTimeMillis());
                         }
                         case ROLE_CHANGE_MESSAGE -> {
                             RoleChangeMessage roleChangeMessage = (RoleChangeMessage) message;
-                            if(roleChangeMessage.getSenderRole().equals(NodeRole.VIEWER)) {
+                            if (roleChangeMessage.getSenderRole().equals(NodeRole.VIEWER)) {
                                 session.setViewer(message.getSenderId());
                             }
                             // Todo handle another role changes
                         }
                         case PING_MESSAGE -> {
-                            System.err.println("PING: " + playersRepository.getLastReceivedMessageTimeMillis().get(message.getSenderId()));
+                            // System.err.println("PING: " + playersRepository.getLastReceivedMessageTimeMillis().get(message.getSenderId()));
                         }
                         case ACK_MESSAGE -> {
-                            System.err.println("ACK: " +  playersRepository.getLastReceivedMessageTimeMillis().get(message.getSenderId()));
+                            // System.err.println("ACK: " +  playersRepository.getLastReceivedMessageTimeMillis().get(message.getSenderId()));
                         }
                     }
                 }

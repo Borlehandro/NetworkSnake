@@ -3,7 +3,10 @@ package com.borlehandro.networks.snake.network;
 import com.borlehandro.networks.snake.game.session.Session;
 import com.borlehandro.networks.snake.protocol.GameConfig;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class OfflineMonitor extends Thread {
     private final Session session;
@@ -21,19 +24,22 @@ public class OfflineMonitor extends Thread {
     @Override
     public void run() {
         while (!interrupted()) {
+            List<Map.Entry<Integer, Long>> offlineUsers;
             synchronized (lastMessageMillis) {
-                Map.copyOf(lastMessageMillis).entrySet().stream()
+                offlineUsers = lastMessageMillis.entrySet().stream()
                         .filter((entry) -> {
                             long delta = System.currentTimeMillis() - entry.getValue();
                             return delta > nodeTimeoutMillis;
-                        })
-                        .forEach((entry) -> session.onNodeOffline(entry.getKey()));
+                        }).collect(Collectors.toList());
             }
-            // Todo test
+            // Test - OK
+            synchronized (session) {
+                offlineUsers.forEach((entry) -> session.onNodeOffline(entry.getKey()));
+            }
             try {
                 sleep(pingDelayMillis);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                return;
             }
         }
     }

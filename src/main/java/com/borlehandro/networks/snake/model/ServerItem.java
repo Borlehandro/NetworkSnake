@@ -10,7 +10,7 @@ import java.util.Objects;
 public class ServerItem {
     private final GameConfig config;
     private final List<Player> players;
-    private final SocketAddress address;
+    private SocketAddress address;
 
     public ServerItem(GameConfig config, List<Player> players, SocketAddress address) {
         this.config = config;
@@ -20,6 +20,10 @@ public class ServerItem {
 
     public GameConfig getConfig() {
         return config;
+    }
+
+    public void changeSocketAddress(SocketAddress address) {
+        this.address = address;
     }
 
     public List<Player> getPlayers() {

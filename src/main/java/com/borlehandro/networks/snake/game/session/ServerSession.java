@@ -1,5 +1,6 @@
 package com.borlehandro.networks.snake.game.session;
 
+import com.borlehandro.networks.snake.ConsoleController;
 import com.borlehandro.networks.snake.game.repository.PlayersServersRepository;
 import com.borlehandro.networks.snake.game.CollisionHandler;
 import com.borlehandro.networks.snake.game.MoveController;
@@ -28,9 +29,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ServerSession implements Session {
     private NetworkActionsManager networkManager;
+    private ConsoleController consoleController;
     private final PlayersServersRepository playersRepository = PlayersServersRepository.getInstance();
     private final ScoreManager scoreManager = new ScoreManager();
-    private final Map<Integer, Snake> snakeMap = new HashMap<>();
+    private final Map<Integer, Snake> snakeMap;
     private final Map<Integer, Snake.Direction> rotationsPool = new HashMap<>();
     private final Field field;
     private final GameConfig config;
@@ -52,6 +54,7 @@ public class ServerSession implements Session {
     public ServerSession(GameConfig config) {
         this.config = config;
         field = new Field(config.getFieldHeight(), config.getFieldWidth());
+        snakeMap = new HashMap<>();
         moveController = new MoveController(field);
         collisionController = new SnakesCollisionController(field, snakeMap.values(), config);
         foodSpawner = new FoodSpawner(field, config);
@@ -63,6 +66,60 @@ public class ServerSession implements Session {
                 field,
                 stateOrder
         );
+    }
+
+    public ServerSession(ConsoleController consoleController, GameConfig config, Map<Integer, Snake> snakeMap, Field field) {
+        this.consoleController = consoleController;
+        this.config = config;
+        this.field = field;
+        this.snakeMap = snakeMap;
+        moveController = new MoveController(this.field);
+        collisionController = new SnakesCollisionController(this.field, this.snakeMap.values(), this.config);
+        foodSpawner = new FoodSpawner(this.field, this.config);
+        snakeSpawner = new SnakeSpawner(this.field, this.snakeMap);
+        gameStateMessageFactory = GameStateMessageFactory.getInstance(
+                this.snakeMap,
+                this.config,
+                playersRepository.getPlayers(),
+                this.field,
+                stateOrder
+        );
+    }
+
+    public void startWithContext(NetworkActionsManager networkManager, int stateOrderValue) throws SocketException {
+        messagesHandler = new ServerMessagesHandler(this);
+        networkManager.changeMessageHandler(messagesHandler);
+        this.networkManager = networkManager;
+        gameClock = new GameClock(this, config);
+        collisionHandler = new CollisionHandler(snakeMap, this);
+        stateOrder.set(stateOrderValue);
+        playersRepository.setPlayersNumber(playersRepository.getPlayers().size());
+        // Todo test
+        var opt = playersRepository.getPlayers().stream().filter(player -> player.getId() > 0).findAny();
+        opt.ifPresent(player ->
+                networkManager.putSendTask(new SendTask(new RoleChangeMessage(
+                        NodeRole.MASTER, NodeRole.DEPUTY, MessagesCounter.next(), 0, player.getId()
+                ), playersRepository.findPlayerAddressById(player.getId()).get()))
+        );
+        init();
+    }
+
+    public void init() {
+        gameClock.start();
+        messagesHandler.start();
+        if (!networkManager.isAlive())
+            networkManager.start();
+        multicastClock = new MulticastClock(networkManager, config);
+        multicastClock.start();
+        offlineMonitor = new OfflineMonitor(this, config, playersRepository.getLastReceivedMessageTimeMillis());
+        offlineMonitor.start();
+        repeatController = new RepeatController(networkManager, networkManager.getWaitResponseMessages(), config);
+        repeatController.start();
+        pinger = new Pinger(config, networkManager, 0, playersRepository.getLastSentMessageTimeMillis(),
+                id -> playersRepository.findPlayerAddressById(id).get()
+        );
+        pinger.start();
+        System.err.println("Start successful");
     }
 
     public void start(int port) throws SocketException {
@@ -80,35 +137,31 @@ public class ServerSession implements Session {
                 .withRole(NodeRole.MASTER)
                 .build().get();
         addPlayer(admin, -1);
-        gameClock.start();
-        messagesHandler.start();
-        networkManager.start();
-        multicastClock = new MulticastClock(networkManager, config);
-        multicastClock.start();
-        offlineMonitor = new OfflineMonitor(this, config, playersRepository.getLastReceivedMessageTimeMillis());
-        offlineMonitor.start();
-        repeatController = new RepeatController(networkManager, networkManager.getWaitResponseMessages(), config);
-        repeatController.start();
-        pinger = new Pinger(config, networkManager, 0, playersRepository.getLastSentMessageTimeMillis(),
-                id -> playersRepository.findPlayerAddressById(id).get()
-        );
-        pinger.start();
+        init();
     }
 
     // Called in PlayerRepository thread
+    // Todo test synchronized
     public void addPlayer(Player player, long messageNumber) {
+        System.err.println("Wait snake monitor " + System.currentTimeMillis());
         synchronized (snakeMap) {
+            System.err.println("Wait repo monitor " + System.currentTimeMillis());
+            // Todo test without player repo synchronization
             synchronized (playersRepository) {
+                System.err.println("Adding player..." + System.currentTimeMillis());
                 player.setId(playersRepository.addPlayer(player));
                 if (player.getId() != 0)
                     playersRepository.getLastSentMessageTimeMillis().put(player.getId(), System.currentTimeMillis());
                 // Last time is realTime + stateDelay
+                System.err.println("156 " + System.currentTimeMillis());
                 playersRepository.updateLastReceivedMessageTimeMillis(
                         player.getId(),
                         System.currentTimeMillis() + config.getStateDelayMillis(),
                         true
                 );
+                System.err.println("162 " + System.currentTimeMillis());
                 if (!snakeSpawner.spawnRandom(player.getId())) {
+                    System.err.println("Can not add");
                     // Todo Is my id always 0?
                     // Player id is always -1
                     player.setRole(NodeRole.VIEWER);
@@ -118,6 +171,7 @@ public class ServerSession implements Session {
                             player.getId()),
                             playersRepository.findPlayerAddressById(player.getId()).get()));
                 } else {
+                    System.err.println("Add successful " + player.getId());
                     player.setRole(NodeRole.NORMAL);
                     // Dont send message to myself
                     if (player.getId() != 0) {
@@ -141,9 +195,12 @@ public class ServerSession implements Session {
     }
 
     // Called in GameClocks thread
+    // Todo test synchronized
     void nextStep() {
+        System.err.println("Start next step: " + System.currentTimeMillis());
         synchronized (snakeMap) {
             synchronized (rotationsPool) {
+                System.err.println("Next step all monitors: " + System.currentTimeMillis());
                 // Rotate all snakes in rotationPool
                 // TODO Use iterator and remove from pool
                 rotationsPool.forEach((id, direction) -> {
@@ -151,6 +208,7 @@ public class ServerSession implements Session {
                         moveController.rotate(snakeMap.get(id), direction);
                 });
                 rotationsPool.clear();
+
                 // Move all snakes
                 snakeMap.values().forEach(moveController::moveForward);
                 // Handle snakes collisions
@@ -193,8 +251,11 @@ public class ServerSession implements Session {
             System.out.println();
         }
         System.out.println("---------------------");
+        System.err.println("Finish next step: " + System.currentTimeMillis());
     }
 
+    @Override
+    // Todo test synchronized
     public void rotate(int playerId, Snake.Direction direction) {
         synchronized (rotationsPool) {
             rotationsPool.put(playerId, direction);
@@ -202,6 +263,7 @@ public class ServerSession implements Session {
         }
     }
 
+    // Todo test synchronized
     public void onPlayerCrashed(int playerId) {
         if (playerId != 0) {
             var opt = playersRepository.findPlayerAddressById(playerId);
@@ -225,10 +287,11 @@ public class ServerSession implements Session {
     }
 
     @Override
+    // Todo test synchronized
     public void onNodeOffline(int playerId) {
         if (playerId > 0) {
             synchronized (playersRepository) {
-                System.err.println("Player disconnected: " + playerId);
+                System.err.println("Player disconnected: " + playerId + " time " + System.currentTimeMillis());
                 playersRepository.removePlayer(playerId);
                 playersRepository.getLastSentMessageTimeMillis().remove(playerId);
                 playersRepository.getLastReceivedMessageTimeMillis().remove(playerId);
@@ -263,6 +326,7 @@ public class ServerSession implements Session {
         return messagesHandler;
     }
 
+    // Todo test synchronized
     public void setViewer(int playerId) {
         synchronized (playersRepository) {
             networkManager.putSendTask(new SendTask(
@@ -276,6 +340,7 @@ public class ServerSession implements Session {
         }
     }
 
+    // Todo test synchronized
     public void exit() {
         // Todo Test send message to deputy
         if (deputyId != -1) {
@@ -285,5 +350,9 @@ public class ServerSession implements Session {
             ));
             // Todo interrupt threads
         }
+    }
+
+    public void setConsoleController(ConsoleController consoleController) {
+        this.consoleController = consoleController;
     }
 }

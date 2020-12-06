@@ -1,5 +1,6 @@
 package com.borlehandro.networks.snake.game.session;
 
+import com.borlehandro.networks.snake.ConsoleController;
 import com.borlehandro.networks.snake.game.repository.PlayersServersRepository;
 import com.borlehandro.networks.snake.message_handlers.ClientMessagesHandler;
 import com.borlehandro.networks.snake.model.Field;
@@ -13,14 +14,18 @@ import com.borlehandro.networks.snake.protocol.messages.action.SteerMessage;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 public class ClientSession implements Session {
     private Consumer<ServerItem> onNewAnnouncement;
     private ClientMessagesHandler messagesHandler;
     private NetworkActionsManager networkManager;
+    private ConsoleController consoleController;
     private final PlayersServersRepository playersServersRepository = PlayersServersRepository.getInstance();
     private AnnounceReceiver announceReceiver;
     private Pinger pinger;
@@ -32,6 +37,7 @@ public class ClientSession implements Session {
     private ServerItem currentServer;
     private RepeatController repeatController;
     private OfflineMonitor offlineMonitor;
+    private List<Snake> snakes;
 
     public void start(Consumer<ServerItem> onNewAnnouncement, int port) throws IOException {
         this.onNewAnnouncement = onNewAnnouncement;
@@ -62,6 +68,7 @@ public class ClientSession implements Session {
                 playersServersRepository.getServersCopy().get(serverItemId).getAddress()));
     }
 
+    @Override
     public void rotate(Snake.Direction direction) {
         networkManager.putSendTask(new SendTask(
                 new SteerMessage(direction, MessagesCounter.next(), myId, 0),
@@ -81,6 +88,7 @@ public class ClientSession implements Session {
             field.clear();
             field.setFood(foodCoordinates);
             field.setSnakes(snakes);
+            this.snakes = snakes;
             currentStateOrder = stateOrder;
             // Test only
             // Field showing
@@ -101,6 +109,9 @@ public class ClientSession implements Session {
                 System.out.println();
             }
             System.out.println("---------------------");
+        } else {
+            // Test only
+            System.err.println("UPDATE IGNORED number " + stateOrder + "<=" + currentStateOrder);
         }
     }
 
@@ -129,8 +140,12 @@ public class ClientSession implements Session {
         }
         if (senderRole.equals(NodeRole.MASTER) && senderId != 0) {
             System.err.println("New master O_O");
-            // Todo connect to new master,
-            //  change currentServerItem
+            // Todo test change currentServerItem and clear receive time
+            currentServer.changeSocketAddress(playersServersRepository.findPlayerAddressById(senderId).get());
+            playersServersRepository.getLastReceivedMessageTimeMillis().replace(
+                    playersServersRepository.getCurrentServerId(),
+                    System.currentTimeMillis() + currentServerConfig.getStateDelayMillis()
+            );
         }
     }
 
@@ -181,8 +196,8 @@ public class ClientSession implements Session {
 
     @Override
     public void onNodeOffline(int serverId) {
-        if (isDeputy) {
-            System.err.println("NODE OFFLINE: " + serverId);
+        if (isDeputy && serverId == playersServersRepository.getCurrentServerId()) {
+            System.err.println("NODE OFFLINE: " + serverId + " time " + System.currentTimeMillis() + " last message " + playersServersRepository.getLastReceivedMessageTimeMillis().get(serverId));
             System.err.println("I'm master, because server offline");
             // Todo do it when relaunch
             playersServersRepository.getPlayers().forEach(player -> {
@@ -193,16 +208,77 @@ public class ClientSession implements Session {
                     ));
                 }
             });
-            // Todo test only
+            // Todo test
             isDeputy = false;
+
+            messagesHandler.interrupt();
+            pinger.interrupt();
+            repeatController.interrupt();
+            // networkManager.interrupt();
+            announceReceiver.interrupt();
+
+            Map<Integer, Snake> snakeMap = new HashMap<>();
+            snakes.forEach(
+                    snake -> {
+                        if (snake.getPlayerId() == myId) {
+                            snake.changePlayerId(0);
+                        } else if (snake.getPlayerId() == 0) {
+                            snake.changePlayerId(-1);
+                            snake.setZombie();
+                        }
+                        snakeMap.put(snake.getPlayerId(), snake);
+                    }
+            );
+
+            playersServersRepository
+                    .getPlayers()
+                    .removeIf(player -> player.getId() == 0);
+
+            // Todo test
+            playersServersRepository.clearServers();
+            playersServersRepository.getLastReceivedMessageTimeMillis().clear();
+            playersServersRepository.getLastSentMessageTimeMillis().clear();
+
+            // Add players to last send and receive
+
+            var latsSend = playersServersRepository.getLastSentMessageTimeMillis();
+            var lastReceive = playersServersRepository.getLastReceivedMessageTimeMillis();
+
+            playersServersRepository.changePlayerId(myId, 0);
+
+            playersServersRepository
+                    .getPlayers()
+                    .forEach(player -> {
+                        if (player.getId() > 0) {
+                            latsSend.put(player.getId(), 0L);
+                            lastReceive.put(player.getId(),
+                                    System.currentTimeMillis() + currentServerConfig.getNodeTimeoutMillis()
+                            );
+                        }
+                    });
+
+            try {
+                ServerSession session = new ServerSession(consoleController, currentServerConfig, snakeMap, field);
+                consoleController.changeSession(session);
+                session.startWithContext(networkManager, currentStateOrder);
+            } catch (SocketException e) {
+                e.printStackTrace();
+            }
+
+            offlineMonitor.interrupt();
         }
     }
 
+    @Override
     public void exit() {
         networkManager.putSendTask(new SendTask(
                 new RoleChangeMessage(NodeRole.VIEWER, NodeRole.MASTER, MessagesCounter.next(), myId, 0),
                 currentServer.getAddress()
         ));
         // Todo interrupt all threads
+    }
+
+    public void setConsoleController(ConsoleController consoleController) {
+        this.consoleController = consoleController;
     }
 }

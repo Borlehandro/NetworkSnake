@@ -25,9 +25,9 @@ public class ClientMessagesHandler extends MessagesHandler {
             synchronized (tasksToHandle) {
                 if (!tasksToHandle.isEmpty()) {
                     // Debug
-                    System.err.println("--------------");
-                    tasksToHandle.forEach(System.err::println);
-                    System.err.println("--------------");
+//                    System.err.println("--------------");
+//                    tasksToHandle.forEach(System.err::println);
+//                    System.err.println("--------------");
                     var task = tasksToHandle.pollFirst();
                     Message message = task.getMessage();
                     InetSocketAddress socketAddress = task.getSocketAddress();
@@ -62,7 +62,7 @@ public class ClientMessagesHandler extends MessagesHandler {
                                     roleMessage.getSenderId());
                         }
                         case PING_MESSAGE -> {
-                            System.err.println("PING");
+                            // System.err.println("PING");
                         }
                     }
                 }

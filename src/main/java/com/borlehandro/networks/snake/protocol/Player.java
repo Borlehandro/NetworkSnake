@@ -13,7 +13,7 @@ public class Player {
     private NodeRole role;
     private int score;
 
-    private Player(String name,
+    public Player(String name,
                    String ipAddress,
                    int port) {
         this.name = name;

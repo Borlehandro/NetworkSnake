@@ -9,12 +9,19 @@ public class Snake {
     private boolean hadFood = false;
     private SnakeNode lastTail;
     private SnakeState state;
+    private int playerId;
+
+    public int getPlayerId() {
+        return playerId;
+    }
+
     public enum SnakeState {
         ALIVE,
         ZOMBIE
     }
 
-    public Snake() {
+    public Snake(int playerId) {
+        this.playerId = playerId;
         state = SnakeState.ALIVE;
     }
 
@@ -48,6 +55,10 @@ public class Snake {
 
     public void setHadFood(boolean hadFood) {
         this.hadFood = hadFood;
+    }
+
+    public void changePlayerId(int newId) {
+        playerId = newId;
     }
 
     public SnakeNode getLastTail() {

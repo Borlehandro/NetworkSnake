@@ -8,16 +8,13 @@ import com.google.gson.JsonSyntaxException;
 
 import java.io.IOException;
 import java.net.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * Receive multicast messages
  */
-public class AnnounceReceiver {
+public class AnnounceReceiver extends Thread {
     private final MulticastSocket socket;
     private final InetAddress groupAddress;
-    private final ExecutorService sendExecutor = Executors.newSingleThreadExecutor();
     private final MessagesHandler messagesHandler;
 
     public AnnounceReceiver(MessagesHandler handler) throws IOException {
@@ -31,23 +28,22 @@ public class AnnounceReceiver {
         this.messagesHandler = handler;
     }
 
-    public void start() {
-        sendExecutor.execute(() -> {
-            Gson gson = new Gson();
-            while (!Thread.interrupted()) {
-                try {
-                    byte[] buffer = new byte[2048]; // 2 Kb
-                    var receivedDatagram = new DatagramPacket(buffer, buffer.length);
-                    socket.receive(receivedDatagram);
-                    String s = new String(buffer, 0, receivedDatagram.getLength());
-                    Message message = gson.fromJson(s, AnnouncementMessage.class);
-                    var socketAddress = new InetSocketAddress(receivedDatagram.getAddress(), receivedDatagram.getPort());
-                    messagesHandler.handleMessage(message, socketAddress);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    // Todo fix json exception
-                } catch(JsonSyntaxException ignore) {}
+    public void run() {
+        Gson gson = new Gson();
+        while (!interrupted()) {
+            try {
+                byte[] buffer = new byte[2048]; // 2 Kb
+                var receivedDatagram = new DatagramPacket(buffer, buffer.length);
+                socket.receive(receivedDatagram);
+                String s = new String(buffer, 0, receivedDatagram.getLength());
+                Message message = gson.fromJson(s, AnnouncementMessage.class);
+                var socketAddress = new InetSocketAddress(receivedDatagram.getAddress(), receivedDatagram.getPort());
+                messagesHandler.handleMessage(message, socketAddress);
+            } catch (IOException e) {
+                e.printStackTrace();
+                // Todo fix json exception
+            } catch (JsonSyntaxException ignore) {
             }
-        });
+        }
     }
 }

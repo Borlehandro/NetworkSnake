@@ -34,7 +34,7 @@ public class Pinger extends Thread {
             synchronized (lastSentMessageTime) {
                 lastSentMessageTime.forEach((key, value) -> {
                             if (System.currentTimeMillis() - value > pingDelayMillis) {
-                                System.err.println("I send ping from " + senderId + " to " + getAddressFunction.apply(key));
+                                // System.err.println("I send ping from " + senderId + " to " + getAddressFunction.apply(key));
                                 manager.putSendTask(
                                         new SendTask(
                                                 new PingMessage(MessagesCounter.next(), senderId, 0),
@@ -46,7 +46,7 @@ public class Pinger extends Thread {
             try {
                 sleep(pingDelayMillis);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                return;
             }
         }
     }

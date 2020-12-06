@@ -24,7 +24,8 @@ public class NetworkActionsManager extends Thread {
     private final ArrayDeque<SendTask> messagesQueue = new ArrayDeque<>();
     private final HashMap<SendTask, Long> waitResponseMessages = new HashMap<>();
     private final ArrayDeque<AnnouncementMessage> multicastQueue = new ArrayDeque<>();
-    private final MessagesHandler handler;
+    private MessagesHandler handler;
+    private final int port;
     private static final SocketAddress MULTICAST_ADDRESS = new InetSocketAddress("239.192.0.4", 9192);
 
     private final PlayersServersRepository repository = PlayersServersRepository.getInstance();
@@ -33,6 +34,14 @@ public class NetworkActionsManager extends Thread {
         this.handler = handler;
         // Todo fix port
         socket = new DatagramSocket(port);
+        this.port = port;
+    }
+
+    public synchronized void changeMessageHandler(MessagesHandler messagesHandler) {
+        // Todo test and fix
+        synchronized (messagesQueue) {
+            this.handler = messagesHandler;
+        }
     }
 
     @Override
@@ -53,10 +62,13 @@ public class NetworkActionsManager extends Thread {
                     // System.err.println("in q: " + sendTask.getMessage().getType());
                     // Debug
 
-                    // if (sendTask.getMessage().getType().equals(MessageType.STEER_MESSAGE))
-                        // System.err.println("STEER_MESSAGE");
-                    // if (sendTask.getMessage().getType().equals(MessageType.PING_MESSAGE))
-                        // System.err.println("Send ping message");
+
+                    if (sendTask.getMessage().getType().equals(MessageType.ACK_MESSAGE))
+                        System.err.println("Send ACK_MESSAGE " + System.currentTimeMillis());
+                    if (sendTask.getMessage().getType().equals(MessageType.JOIN_MESSAGE))
+                        System.err.println("Send JOIN " + System.currentTimeMillis());
+//                    if (sendTask.getMessage().getType().equals(MessageType.GAME_STATE_MESSAGE))
+//                        System.err.println("Send game state message to " + sendTask.getMessage().getReceiverId());
 
                     var datagram = new DatagramPacket(
                             messageJson.getBytes(),
@@ -101,17 +113,19 @@ public class NetworkActionsManager extends Thread {
             }
             // Receive
             try {
-                socket.setSoTimeout(100);
-                byte[] datagramBuffer = new byte[2048]; // 2 Kb
+                socket.setSoTimeout(50);
+                byte[] datagramBuffer = new byte[5120]; // 5 Kb
                 var receivedPacket = new DatagramPacket(datagramBuffer, datagramBuffer.length);
                 socket.receive(receivedPacket);
                 String s = new String(datagramBuffer, 0, receivedPacket.getLength());
                 Message message = MessageParser.parseMessage(s);
-                // if (message.getType().equals(MessageType.PING_MESSAGE))
-                    // System.err.println("Receive PING");
+                if (message.getType().equals(MessageType.PING_MESSAGE))
+                    System.err.println("Receive PING sender: " + message.getSenderId() + " time: " + System.currentTimeMillis());
                 // Todo Add response message in the queue
                 if (message.getType().equals(MessageType.ACK_MESSAGE)) {
+                    System.err.println("Receive ack sender: " + message.getSenderId() + " time: " + System.currentTimeMillis());
                     synchronized (waitResponseMessages) {
+                        System.err.println("Ack sync");
                         waitResponseMessages.entrySet().removeIf(entry ->
                                 entry.getKey().getMessage().getMessageNumber() == message.getMessageNumber()
                         );
@@ -129,6 +143,9 @@ public class NetworkActionsManager extends Thread {
                         // System.err.println("message Queue 120 off");
                     }
                 }
+                if (message.getType().equals(MessageType.JOIN_MESSAGE))
+                    System.err.println("Receive join " + System.currentTimeMillis());
+                // Todo move handling in the top
                 var socketAddress = new InetSocketAddress(receivedPacket.getAddress(), receivedPacket.getPort());
                 handler.handleMessage(message, socketAddress);
             } catch (SocketTimeoutException ignored) {
@@ -156,5 +173,9 @@ public class NetworkActionsManager extends Thread {
 
     public HashMap<SendTask, Long> getWaitResponseMessages() {
         return waitResponseMessages;
+    }
+
+    public int getPort() {
+        return port;
     }
 }

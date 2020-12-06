@@ -63,7 +63,7 @@ public class SnakeSpawner {
      * Create Snake, spawn it in particular field node and insert into snakes map
      */
     public void spawnSnakeByCoordinates(int headX, int headY, Snake.Direction direction, int playerId) {
-        Snake s = new Snake();
+        Snake s = new Snake(playerId);
         int tailX, tailY;
         switch (direction) {
             case UP -> {
