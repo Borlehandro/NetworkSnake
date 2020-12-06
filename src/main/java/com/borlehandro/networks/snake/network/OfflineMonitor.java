@@ -1,9 +1,8 @@
 package com.borlehandro.networks.snake.network;
 
-import com.borlehandro.networks.snake.game.session.Session;
+import com.borlehandro.networks.snake.game.api.Session;
 import com.borlehandro.networks.snake.protocol.GameConfig;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;

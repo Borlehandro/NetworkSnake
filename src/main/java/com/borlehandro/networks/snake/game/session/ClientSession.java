@@ -1,6 +1,7 @@
 package com.borlehandro.networks.snake.game.session;
 
-import com.borlehandro.networks.snake.ConsoleController;
+import com.borlehandro.networks.snake.game.api.AbstractClientSession;
+import com.borlehandro.networks.snake.game.api.AbstractController;
 import com.borlehandro.networks.snake.game.repository.PlayersServersRepository;
 import com.borlehandro.networks.snake.message_handlers.ClientMessagesHandler;
 import com.borlehandro.networks.snake.model.Field;
@@ -11,6 +12,7 @@ import com.borlehandro.networks.snake.protocol.*;
 import com.borlehandro.networks.snake.protocol.messages.action.JoinMessage;
 import com.borlehandro.networks.snake.protocol.messages.action.RoleChangeMessage;
 import com.borlehandro.networks.snake.protocol.messages.action.SteerMessage;
+import com.borlehandro.networks.snake.ui.ServerListController;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -19,13 +21,14 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-public class ClientSession implements Session {
-    private Consumer<ServerItem> onNewAnnouncement;
+public class ClientSession implements AbstractClientSession {
+    private BiConsumer<Integer, ServerItem> onNewAnnouncement;
     private ClientMessagesHandler messagesHandler;
     private NetworkActionsManager networkManager;
-    private ConsoleController consoleController;
+    private AbstractController abstractController;
     private final PlayersServersRepository playersServersRepository = PlayersServersRepository.getInstance();
     private AnnounceReceiver announceReceiver;
     private Pinger pinger;
@@ -39,7 +42,7 @@ public class ClientSession implements Session {
     private OfflineMonitor offlineMonitor;
     private List<Snake> snakes;
 
-    public void start(Consumer<ServerItem> onNewAnnouncement, int port) throws IOException {
+    public void start(BiConsumer<Integer, ServerItem> onNewAnnouncement, int port) throws IOException {
         this.onNewAnnouncement = onNewAnnouncement;
         messagesHandler = new ClientMessagesHandler(this);
         messagesHandler.start();
@@ -49,11 +52,13 @@ public class ClientSession implements Session {
         announceReceiver.start();
     }
 
+    @Override
     public void newAnnouncement(ServerItem item) {
         if (currentServer == null) {
             // Todo save new server id or call it in callback
-            playersServersRepository.addServerItem(item);
-            onNewAnnouncement.accept(item);
+            int id = playersServersRepository.addServerItem(item);
+            if(id >= 0)
+                onNewAnnouncement.accept(id, item);
             // Tests only
             System.out.println("Available Servers :");
             playersServersRepository.getServersCopy().forEach(System.out::println);
@@ -61,6 +66,7 @@ public class ClientSession implements Session {
         }
     }
 
+    @Override
     public void joinGame(int serverItemId, String userName) {
         playersServersRepository.setServerToConnectId(serverItemId);
         networkManager.putSendTask(new SendTask(
@@ -258,8 +264,8 @@ public class ClientSession implements Session {
                     });
 
             try {
-                ServerSession session = new ServerSession(consoleController, currentServerConfig, snakeMap, field);
-                consoleController.changeSession(session);
+                ServerSession session = new ServerSession(abstractController, currentServerConfig, snakeMap, field);
+                abstractController.changeSession(session);
                 session.startWithContext(networkManager, currentStateOrder);
             } catch (SocketException e) {
                 e.printStackTrace();
@@ -278,7 +284,7 @@ public class ClientSession implements Session {
         // Todo interrupt all threads
     }
 
-    public void setConsoleController(ConsoleController consoleController) {
-        this.consoleController = consoleController;
+    public void setAbstractController(AbstractController abstractController) {
+        this.abstractController = abstractController;
     }
 }

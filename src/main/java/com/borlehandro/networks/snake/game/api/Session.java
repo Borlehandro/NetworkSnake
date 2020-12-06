@@ -1,4 +1,4 @@
-package com.borlehandro.networks.snake.game.session;
+package com.borlehandro.networks.snake.game.api;
 
 import com.borlehandro.networks.snake.model.Snake;
 

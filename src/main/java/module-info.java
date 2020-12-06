@@ -10,4 +10,6 @@ module com.borlehandro.networks.snake {
     opens com.borlehandro.networks.snake.protocol.messages.state to com.google.gson;
     opens com.borlehandro.networks.snake.protocol.messages.action to com.google.gson;
     exports com.borlehandro.networks.snake.ui;
+    exports com.borlehandro.networks.snake.model;
+    exports com.borlehandro.networks.snake.game.api;
 }

@@ -1,6 +1,8 @@
 package com.borlehandro.networks.snake.game.session;
 
 import com.borlehandro.networks.snake.ConsoleController;
+import com.borlehandro.networks.snake.game.api.AbstractController;
+import com.borlehandro.networks.snake.game.api.Session;
 import com.borlehandro.networks.snake.game.repository.PlayersServersRepository;
 import com.borlehandro.networks.snake.game.CollisionHandler;
 import com.borlehandro.networks.snake.game.MoveController;
@@ -29,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ServerSession implements Session {
     private NetworkActionsManager networkManager;
-    private ConsoleController consoleController;
+    private AbstractController abstractController;
     private final PlayersServersRepository playersRepository = PlayersServersRepository.getInstance();
     private final ScoreManager scoreManager = new ScoreManager();
     private final Map<Integer, Snake> snakeMap;
@@ -68,8 +70,8 @@ public class ServerSession implements Session {
         );
     }
 
-    public ServerSession(ConsoleController consoleController, GameConfig config, Map<Integer, Snake> snakeMap, Field field) {
-        this.consoleController = consoleController;
+    public ServerSession(AbstractController abstractController, GameConfig config, Map<Integer, Snake> snakeMap, Field field) {
+        this.abstractController = abstractController;
         this.config = config;
         this.field = field;
         this.snakeMap = snakeMap;
@@ -352,7 +354,7 @@ public class ServerSession implements Session {
         }
     }
 
-    public void setConsoleController(ConsoleController consoleController) {
-        this.consoleController = consoleController;
+    public void setAbstractController(ConsoleController abstractController) {
+        this.abstractController = abstractController;
     }
 }
