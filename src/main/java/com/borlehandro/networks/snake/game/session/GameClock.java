@@ -1,6 +1,6 @@
 package com.borlehandro.networks.snake.game.session;
 
-import com.borlehandro.networks.snake.protocol.GameConfig;
+import com.borlehandro.networks.snake.model.GameConfig;
 
 public class GameClock extends Thread {
     private final int TICK_TIMEOUT;

@@ -1,7 +1,5 @@
 package com.borlehandro.networks.snake.model;
 
-import com.borlehandro.networks.snake.protocol.Coordinates;
-
 import java.util.*;
 
 public class Snake {
@@ -81,7 +79,7 @@ public class Snake {
         UP, DOWN, LEFT, RIGHT
     }
 
-    private ArrayDeque<SnakeNode> body = new ArrayDeque<>();
+    private final ArrayDeque<SnakeNode> body = new ArrayDeque<>();
     private LinkedHashMap<Node, Direction> changeDirectionNode = new LinkedHashMap<>();
 
     public static class SnakeNode extends Node {
@@ -107,10 +105,6 @@ public class Snake {
 
         public void setNodeDirection(Direction newDirection) {
             this.nodeDirection = newDirection;
-        }
-
-        public Coordinates getCoordinates() {
-            return new Coordinates(x, y);
         }
 
         @Override

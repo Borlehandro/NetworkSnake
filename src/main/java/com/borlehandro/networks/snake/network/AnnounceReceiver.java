@@ -1,8 +1,8 @@
 package com.borlehandro.networks.snake.network;
 
 import com.borlehandro.networks.snake.message_handlers.MessagesHandler;
-import com.borlehandro.networks.snake.protocol.messages.Message;
-import com.borlehandro.networks.snake.protocol.messages.state.AnnouncementMessage;
+import com.borlehandro.networks.snake.messages.Message;
+import com.borlehandro.networks.snake.messages.state.AnnouncementMessage;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 

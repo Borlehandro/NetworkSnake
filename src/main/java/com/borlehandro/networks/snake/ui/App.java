@@ -1,13 +1,5 @@
 package com.borlehandro.networks.snake.ui;
 
-import com.borlehandro.networks.snake.PropertiesLoader;
-import com.borlehandro.networks.snake.game.MoveController;
-import com.borlehandro.networks.snake.game.SnakesCollisionController;
-import com.borlehandro.networks.snake.model.Field;
-import com.borlehandro.networks.snake.model.Snake;
-import com.borlehandro.networks.snake.game.spawn.FoodSpawner;
-import com.borlehandro.networks.snake.game.spawn.SnakeSpawner;
-import com.borlehandro.networks.snake.protocol.GameConfig;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -15,9 +7,6 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
 
 public class App extends Application {
 

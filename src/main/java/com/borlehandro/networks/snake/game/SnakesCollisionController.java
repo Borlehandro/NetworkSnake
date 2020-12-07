@@ -3,7 +3,7 @@ package com.borlehandro.networks.snake.game;
 import com.borlehandro.networks.snake.model.Field;
 import com.borlehandro.networks.snake.model.FieldNode;
 import com.borlehandro.networks.snake.model.Snake;
-import com.borlehandro.networks.snake.protocol.GameConfig;
+import com.borlehandro.networks.snake.model.GameConfig;
 
 import java.util.*;
 import java.util.function.Consumer;

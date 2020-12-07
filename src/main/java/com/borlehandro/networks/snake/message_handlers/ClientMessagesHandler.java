@@ -3,10 +3,10 @@ package com.borlehandro.networks.snake.message_handlers;
 import com.borlehandro.networks.snake.game.repository.PlayersServersRepository;
 import com.borlehandro.networks.snake.game.session.ClientSession;
 import com.borlehandro.networks.snake.model.ServerItem;
-import com.borlehandro.networks.snake.protocol.messages.Message;
-import com.borlehandro.networks.snake.protocol.messages.action.RoleChangeMessage;
-import com.borlehandro.networks.snake.protocol.messages.state.AnnouncementMessage;
-import com.borlehandro.networks.snake.protocol.messages.state.GameStateMessage;
+import com.borlehandro.networks.snake.messages.Message;
+import com.borlehandro.networks.snake.messages.action.RoleChangeMessage;
+import com.borlehandro.networks.snake.messages.state.AnnouncementMessage;
+import com.borlehandro.networks.snake.messages.state.GameStateMessage;
 
 import java.net.InetSocketAddress;
 
@@ -72,10 +72,11 @@ public class ClientMessagesHandler extends MessagesHandler {
 
     @Override
     public void handleMessage(Message message, InetSocketAddress socketAddress) {
+        // Todo test
+        System.err.println("UPDATE RECEIVED for " + message.getSenderId() + " to " + System.currentTimeMillis());
+        serversRepository.updateLastReceivedMessageTimeMillis(message.getSenderId(), System.currentTimeMillis(), false);
         synchronized (tasksToHandle) {
             tasksToHandle.addLast(new HandleTask(message, socketAddress));
         }
-        // Todo test
-        serversRepository.updateLastReceivedMessageTimeMillis(message.getSenderId(), System.currentTimeMillis(), false);
     }
 }

@@ -1,9 +1,9 @@
-package com.borlehandro.networks.snake.protocol.messages.factory;
+package com.borlehandro.networks.snake.messages.factory;
 
-import com.borlehandro.networks.snake.protocol.GameConfig;
-import com.borlehandro.networks.snake.protocol.Player;
-import com.borlehandro.networks.snake.protocol.messages.state.AnnouncementMessage;
-import com.borlehandro.networks.snake.protocol.messages.state.StateMessage;
+import com.borlehandro.networks.snake.model.GameConfig;
+import com.borlehandro.networks.snake.model.Player;
+import com.borlehandro.networks.snake.messages.state.AnnouncementMessage;
+import com.borlehandro.networks.snake.messages.state.StateMessage;
 
 import java.util.List;
 import java.util.Optional;

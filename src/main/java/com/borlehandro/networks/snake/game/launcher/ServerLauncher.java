@@ -1,9 +1,8 @@
 package com.borlehandro.networks.snake.game.launcher;
 
-import com.borlehandro.networks.snake.ConsoleController;
 import com.borlehandro.networks.snake.PropertiesLoader;
 import com.borlehandro.networks.snake.game.session.ServerSession;
-import com.borlehandro.networks.snake.protocol.GameConfig;
+import com.borlehandro.networks.snake.model.GameConfig;
 
 import java.io.IOException;
 

@@ -1,4 +1,4 @@
-package com.borlehandro.networks.snake.protocol;
+package com.borlehandro.networks.snake.model;
 
 import java.util.Objects;
 

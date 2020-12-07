@@ -1,7 +1,6 @@
-package com.borlehandro.networks.snake.protocol.messages.state;
+package com.borlehandro.networks.snake.messages.state;
 
-import com.borlehandro.networks.snake.model.FieldNode;
-import com.borlehandro.networks.snake.protocol.messages.Message;
+import com.borlehandro.networks.snake.messages.Message;
 
 /**
  * Marker class

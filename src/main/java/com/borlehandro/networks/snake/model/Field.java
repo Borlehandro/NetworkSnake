@@ -1,7 +1,5 @@
 package com.borlehandro.networks.snake.model;
 
-import com.borlehandro.networks.snake.protocol.Coordinates;
-
 import java.util.List;
 
 public class Field {

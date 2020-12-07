@@ -2,12 +2,12 @@ package com.borlehandro.networks.snake.network;
 
 import com.borlehandro.networks.snake.game.repository.PlayersServersRepository;
 import com.borlehandro.networks.snake.message_handlers.MessagesHandler;
-import com.borlehandro.networks.snake.protocol.SendTask;
-import com.borlehandro.networks.snake.protocol.messages.Message;
-import com.borlehandro.networks.snake.protocol.messages.MessageParser;
-import com.borlehandro.networks.snake.protocol.messages.MessageType;
-import com.borlehandro.networks.snake.protocol.messages.action.AckMessage;
-import com.borlehandro.networks.snake.protocol.messages.state.AnnouncementMessage;
+import com.borlehandro.networks.snake.model.SendTask;
+import com.borlehandro.networks.snake.messages.Message;
+import com.borlehandro.networks.snake.messages.MessageParser;
+import com.borlehandro.networks.snake.messages.MessageType;
+import com.borlehandro.networks.snake.messages.action.AckMessage;
+import com.borlehandro.networks.snake.messages.state.AnnouncementMessage;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -24,6 +24,7 @@ public class NetworkActionsManager extends Thread {
     private final ArrayDeque<SendTask> messagesQueue = new ArrayDeque<>();
     private final HashMap<SendTask, Long> waitResponseMessages = new HashMap<>();
     private final ArrayDeque<AnnouncementMessage> multicastQueue = new ArrayDeque<>();
+    private int myId = -1;
     private MessagesHandler handler;
     private final int port;
     private static final SocketAddress MULTICAST_ADDRESS = new InetSocketAddress("239.192.0.4", 9192);
@@ -56,7 +57,6 @@ public class NetworkActionsManager extends Thread {
 //                    // System.err.println("------------------");
 
                 if (!messagesQueue.isEmpty()) {
-                    // System.err.println("message Queue 50");
                     var sendTask = messagesQueue.pollFirst();
                     var messageJson = gson.toJson(sendTask.getMessage());
                     // System.err.println("in q: " + sendTask.getMessage().getType());
@@ -76,6 +76,7 @@ public class NetworkActionsManager extends Thread {
                             sendTask.getReceiverAddress());
                     try {
                         socket.send(datagram);
+                        System.err.println("Send"+ sendTask.getMessage().getType() + "on " + System.currentTimeMillis() + " to " + sendTask.getMessage().getReceiverId());
                         // Todo test
                         // System.err.println("67");
                         repository.updateLastSentMessageTimeMillis(sendTask.getMessage().getReceiverId(), System.currentTimeMillis(), false);
@@ -92,6 +93,47 @@ public class NetworkActionsManager extends Thread {
                     }
                     // System.err.println("message Queue 50 off");
                 }
+            }
+            // Receive
+            try {
+                // Try to use sync on received time
+                socket.setSoTimeout(50);
+                byte[] datagramBuffer = new byte[5120]; // 5 Kb
+                var receivedPacket = new DatagramPacket(datagramBuffer, datagramBuffer.length);
+                socket.receive(receivedPacket);
+                String s = new String(datagramBuffer, 0, receivedPacket.getLength());
+                Message message = MessageParser.parseMessage(s);
+                System.err.println("Receive :" + message.getType() + " from " + message.getSenderId() + " time: " + System.currentTimeMillis());
+                // Todo Add response message in the queue
+                if (message.getType().equals(MessageType.ACK_MESSAGE)) {
+                    System.err.println("Receive ack sender: " + message.getSenderId() + " time: " + System.currentTimeMillis());
+                    synchronized (waitResponseMessages) {
+                        System.err.println("Ack sync");
+                        waitResponseMessages.entrySet().removeIf(entry ->
+                                entry.getKey().getMessage().getMessageNumber() == message.getMessageNumber()
+                        );
+                    }
+                } else if (!message.getType().equals(MessageType.ANNOUNCEMENT_MESSAGE) &&
+                        !message.getType().equals(MessageType.JOIN_MESSAGE) &&
+                        !message.getType().equals(MessageType.PING_MESSAGE)) {
+                    // Todo test fake id!
+                    synchronized (messagesQueue) {
+                        // System.err.println("message Queue 120");
+                        messagesQueue.addLast(new SendTask(
+                                new AckMessage(message.getMessageNumber(), myId, message.getReceiverId()),
+                                receivedPacket.getSocketAddress()
+                        ));
+                        // System.err.println("message Queue 120 off");
+                    }
+                }
+                if (message.getType().equals(MessageType.JOIN_MESSAGE))
+                    System.err.println("Receive join " + System.currentTimeMillis());
+                // Todo move handling in the top
+                var socketAddress = new InetSocketAddress(receivedPacket.getAddress(), receivedPacket.getPort());
+                handler.handleMessage(message, socketAddress);
+            } catch (SocketTimeoutException ignored) {
+            } catch (IOException e) {
+                e.printStackTrace();
             }
             // Send multicast
             // Queue is always empty for client
@@ -110,47 +152,6 @@ public class NetworkActionsManager extends Thread {
                         e.printStackTrace();
                     }
                 }
-            }
-            // Receive
-            try {
-                socket.setSoTimeout(50);
-                byte[] datagramBuffer = new byte[5120]; // 5 Kb
-                var receivedPacket = new DatagramPacket(datagramBuffer, datagramBuffer.length);
-                socket.receive(receivedPacket);
-                String s = new String(datagramBuffer, 0, receivedPacket.getLength());
-                Message message = MessageParser.parseMessage(s);
-                if (message.getType().equals(MessageType.PING_MESSAGE))
-                    System.err.println("Receive PING sender: " + message.getSenderId() + " time: " + System.currentTimeMillis());
-                // Todo Add response message in the queue
-                if (message.getType().equals(MessageType.ACK_MESSAGE)) {
-                    System.err.println("Receive ack sender: " + message.getSenderId() + " time: " + System.currentTimeMillis());
-                    synchronized (waitResponseMessages) {
-                        System.err.println("Ack sync");
-                        waitResponseMessages.entrySet().removeIf(entry ->
-                                entry.getKey().getMessage().getMessageNumber() == message.getMessageNumber()
-                        );
-                    }
-                } else if (!message.getType().equals(MessageType.ANNOUNCEMENT_MESSAGE) &&
-                        !message.getType().equals(MessageType.JOIN_MESSAGE) &&
-                        !message.getType().equals(MessageType.PING_MESSAGE)) {
-                    // Todo test fake id!
-                    synchronized (messagesQueue) {
-                        // System.err.println("message Queue 120");
-                        messagesQueue.addLast(new SendTask(
-                                new AckMessage(message.getMessageNumber(), -1, message.getReceiverId()),
-                                receivedPacket.getSocketAddress()
-                        ));
-                        // System.err.println("message Queue 120 off");
-                    }
-                }
-                if (message.getType().equals(MessageType.JOIN_MESSAGE))
-                    System.err.println("Receive join " + System.currentTimeMillis());
-                // Todo move handling in the top
-                var socketAddress = new InetSocketAddress(receivedPacket.getAddress(), receivedPacket.getPort());
-                handler.handleMessage(message, socketAddress);
-            } catch (SocketTimeoutException ignored) {
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
     }
@@ -178,4 +179,9 @@ public class NetworkActionsManager extends Thread {
     public int getPort() {
         return port;
     }
+
+    public void setMyId(int id) {
+        this.myId = id;
+    }
+
 }

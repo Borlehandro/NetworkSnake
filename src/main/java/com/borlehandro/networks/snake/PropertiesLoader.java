@@ -1,6 +1,6 @@
 package com.borlehandro.networks.snake;
 
-import com.borlehandro.networks.snake.protocol.GameConfig;
+import com.borlehandro.networks.snake.model.GameConfig;
 
 import java.io.IOException;
 import java.util.Properties;

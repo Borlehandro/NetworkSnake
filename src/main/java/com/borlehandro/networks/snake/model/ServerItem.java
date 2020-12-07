@@ -1,8 +1,5 @@
 package com.borlehandro.networks.snake.model;
 
-import com.borlehandro.networks.snake.protocol.GameConfig;
-import com.borlehandro.networks.snake.protocol.Player;
-
 import java.net.SocketAddress;
 import java.util.List;
 import java.util.Objects;

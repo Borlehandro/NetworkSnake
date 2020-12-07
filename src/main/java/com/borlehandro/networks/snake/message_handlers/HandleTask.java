@@ -1,6 +1,6 @@
 package com.borlehandro.networks.snake.message_handlers;
 
-import com.borlehandro.networks.snake.protocol.messages.Message;
+import com.borlehandro.networks.snake.messages.Message;
 
 import java.net.InetSocketAddress;
 

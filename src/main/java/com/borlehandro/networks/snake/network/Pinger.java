@@ -1,9 +1,8 @@
 package com.borlehandro.networks.snake.network;
 
-import com.borlehandro.networks.snake.game.repository.PlayersServersRepository;
-import com.borlehandro.networks.snake.protocol.GameConfig;
-import com.borlehandro.networks.snake.protocol.SendTask;
-import com.borlehandro.networks.snake.protocol.messages.action.PingMessage;
+import com.borlehandro.networks.snake.model.GameConfig;
+import com.borlehandro.networks.snake.model.SendTask;
+import com.borlehandro.networks.snake.messages.action.PingMessage;
 
 import java.net.SocketAddress;
 import java.util.Map;
@@ -35,9 +34,10 @@ public class Pinger extends Thread {
                 lastSentMessageTime.forEach((key, value) -> {
                             if (System.currentTimeMillis() - value > pingDelayMillis) {
                                 // System.err.println("I send ping from " + senderId + " to " + getAddressFunction.apply(key));
+                                // Todo Test ping fix
                                 manager.putSendTask(
                                         new SendTask(
-                                                new PingMessage(MessagesCounter.next(), senderId, 0),
+                                                new PingMessage(MessagesCounter.next(), senderId, key),
                                                 getAddressFunction.apply(key)));
                             }
                         }

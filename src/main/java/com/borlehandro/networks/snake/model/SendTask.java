@@ -1,6 +1,6 @@
-package com.borlehandro.networks.snake.protocol;
+package com.borlehandro.networks.snake.model;
 
-import com.borlehandro.networks.snake.protocol.messages.Message;
+import com.borlehandro.networks.snake.messages.Message;
 
 import java.net.SocketAddress;
 

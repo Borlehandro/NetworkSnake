@@ -1,7 +1,7 @@
 package com.borlehandro.networks.snake.game.repository;
 
 import com.borlehandro.networks.snake.model.ServerItem;
-import com.borlehandro.networks.snake.protocol.Player;
+import com.borlehandro.networks.snake.model.Player;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -32,6 +32,10 @@ public class PlayersServersRepository {
         synchronized (playersMap) {
             return List.copyOf(playersMap.values());
         }
+    }
+
+    public Map<Integer, Player> getPlayersMap() {
+        return playersMap;
     }
 
     public Collection<Player> getPlayers() {

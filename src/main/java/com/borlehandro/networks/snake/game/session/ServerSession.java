@@ -14,14 +14,15 @@ import com.borlehandro.networks.snake.message_handlers.ServerMessagesHandler;
 import com.borlehandro.networks.snake.model.Field;
 import com.borlehandro.networks.snake.model.Snake;
 import com.borlehandro.networks.snake.network.*;
-import com.borlehandro.networks.snake.protocol.GameConfig;
-import com.borlehandro.networks.snake.protocol.NodeRole;
-import com.borlehandro.networks.snake.protocol.Player;
-import com.borlehandro.networks.snake.protocol.SendTask;
-import com.borlehandro.networks.snake.protocol.messages.action.AckMessage;
-import com.borlehandro.networks.snake.protocol.messages.action.ErrorMessage;
-import com.borlehandro.networks.snake.protocol.messages.action.RoleChangeMessage;
-import com.borlehandro.networks.snake.protocol.messages.factory.GameStateMessageFactory;
+import com.borlehandro.networks.snake.model.GameConfig;
+import com.borlehandro.networks.snake.model.NodeRole;
+import com.borlehandro.networks.snake.model.Player;
+import com.borlehandro.networks.snake.model.SendTask;
+import com.borlehandro.networks.snake.messages.action.AckMessage;
+import com.borlehandro.networks.snake.messages.action.ErrorMessage;
+import com.borlehandro.networks.snake.messages.action.RoleChangeMessage;
+import com.borlehandro.networks.snake.messages.factory.GameStateMessageFactory;
+import com.borlehandro.networks.snake.ui.GameUiController;
 
 import java.net.InetSocketAddress;
 import java.net.SocketException;
@@ -32,6 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ServerSession implements Session {
     private NetworkActionsManager networkManager;
     private AbstractController abstractController;
+    private GameUiController uiController;
     private final PlayersServersRepository playersRepository = PlayersServersRepository.getInstance();
     private final ScoreManager scoreManager = new ScoreManager();
     private final Map<Integer, Snake> snakeMap;
@@ -109,13 +111,14 @@ public class ServerSession implements Session {
     public void init() {
         gameClock.start();
         messagesHandler.start();
+        networkManager.setMyId(0);
         if (!networkManager.isAlive())
             networkManager.start();
         multicastClock = new MulticastClock(networkManager, config);
         multicastClock.start();
         offlineMonitor = new OfflineMonitor(this, config, playersRepository.getLastReceivedMessageTimeMillis());
         offlineMonitor.start();
-        repeatController = new RepeatController(networkManager, networkManager.getWaitResponseMessages(), config);
+        repeatController = new RepeatController(networkManager, networkManager.getWaitResponseMessages(), config, playersRepository.getLastSentMessageTimeMillis());
         repeatController.start();
         pinger = new Pinger(config, networkManager, 0, playersRepository.getLastSentMessageTimeMillis(),
                 id -> playersRepository.findPlayerAddressById(id).get()
@@ -357,4 +360,10 @@ public class ServerSession implements Session {
     public void setAbstractController(ConsoleController abstractController) {
         this.abstractController = abstractController;
     }
+
+    @Override
+    public void setController(GameUiController controller) {
+        uiController = controller;
+    }
+
 }

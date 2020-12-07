@@ -4,7 +4,13 @@ import com.borlehandro.networks.snake.game.api.AbstractClientSession;
 import com.borlehandro.networks.snake.model.ServerItem;
 import javafx.collections.*;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.ListView;
+import javafx.stage.Stage;
+
+import java.io.IOException;
 
 public class ServerListController {
 
@@ -32,6 +38,20 @@ public class ServerListController {
     public void onItemClick() {
         // Todo fix name
         clientSession.joinGame(serverListView.getSelectionModel().getSelectedIndex(), "UiTest");
+        try {
+            // Launch game window
+            FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("game_layout.fxml"));
+            Parent root = loader.load();
+            Stage stage = new Stage();
+            stage.setScene(new Scene(root, 720, 360));
+            var gameController = (GameUiController) loader.getController();
+            clientSession.setController(gameController);
+            gameController.setSession(clientSession);
+            serverListView.getScene().getWindow().hide();
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 }

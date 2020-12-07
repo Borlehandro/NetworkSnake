@@ -1,6 +1,6 @@
-package com.borlehandro.networks.snake.protocol.messages.factory;
+package com.borlehandro.networks.snake.messages.factory;
 
-import com.borlehandro.networks.snake.protocol.messages.state.StateMessage;
+import com.borlehandro.networks.snake.messages.state.StateMessage;
 
 /**
  * Convert in-game entities to message entities

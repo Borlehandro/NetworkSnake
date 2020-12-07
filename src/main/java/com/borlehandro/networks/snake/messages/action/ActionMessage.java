@@ -1,6 +1,6 @@
-package com.borlehandro.networks.snake.protocol.messages.action;
+package com.borlehandro.networks.snake.messages.action;
 
-import com.borlehandro.networks.snake.protocol.messages.Message;
+import com.borlehandro.networks.snake.messages.Message;
 
 public abstract class ActionMessage extends Message {
 

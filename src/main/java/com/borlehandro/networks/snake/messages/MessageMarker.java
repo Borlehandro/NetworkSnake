@@ -1,4 +1,4 @@
-package com.borlehandro.networks.snake.protocol.messages;
+package com.borlehandro.networks.snake.messages;
 
 public class MessageMarker {
 

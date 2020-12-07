@@ -1,6 +1,7 @@
 package com.borlehandro.networks.snake.game.api;
 
 import com.borlehandro.networks.snake.model.Snake;
+import com.borlehandro.networks.snake.ui.GameUiController;
 
 public interface Session {
     void onNodeOffline(int nodeId);
@@ -10,5 +11,6 @@ public interface Session {
     default void rotate(Snake.Direction direction) {
         rotate(0, direction);
     }
+    void setController(GameUiController controller);
     void exit();
 }

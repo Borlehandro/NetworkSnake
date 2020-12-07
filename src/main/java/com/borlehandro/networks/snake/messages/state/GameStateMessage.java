@@ -1,10 +1,10 @@
-package com.borlehandro.networks.snake.protocol.messages.state;
+package com.borlehandro.networks.snake.messages.state;
 
 import com.borlehandro.networks.snake.model.Snake;
-import com.borlehandro.networks.snake.protocol.Coordinates;
-import com.borlehandro.networks.snake.protocol.GameConfig;
-import com.borlehandro.networks.snake.protocol.Player;
-import com.borlehandro.networks.snake.protocol.messages.MessageType;
+import com.borlehandro.networks.snake.model.Coordinates;
+import com.borlehandro.networks.snake.model.GameConfig;
+import com.borlehandro.networks.snake.model.Player;
+import com.borlehandro.networks.snake.messages.MessageType;
 
 import java.util.Collection;
 import java.util.List;

@@ -9,7 +9,11 @@ import java.io.IOException;
 public class ClientLauncher {
     public static AbstractClientSession launch(int port, ServerListController controller) throws IOException {
         ClientSession session = new ClientSession();
-        session.start(controller::onServerListUpdate, port);
+        if(controller != null) {
+            session.start(controller::onServerListUpdate, port);
+        } else session.start(((integer, item) -> {}), port);
         return session;
     }
 }
+
+// join 0 Test

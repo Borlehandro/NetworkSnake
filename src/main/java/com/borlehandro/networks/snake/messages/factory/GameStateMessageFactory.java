@@ -1,13 +1,13 @@
-package com.borlehandro.networks.snake.protocol.messages.factory;
+package com.borlehandro.networks.snake.messages.factory;
 
 import com.borlehandro.networks.snake.model.Field;
 import com.borlehandro.networks.snake.model.FieldNode;
 import com.borlehandro.networks.snake.model.Snake;
-import com.borlehandro.networks.snake.protocol.Coordinates;
-import com.borlehandro.networks.snake.protocol.GameConfig;
-import com.borlehandro.networks.snake.protocol.Player;
-import com.borlehandro.networks.snake.protocol.messages.state.GameStateMessage;
-import com.borlehandro.networks.snake.protocol.messages.state.StateMessage;
+import com.borlehandro.networks.snake.model.Coordinates;
+import com.borlehandro.networks.snake.model.GameConfig;
+import com.borlehandro.networks.snake.model.Player;
+import com.borlehandro.networks.snake.messages.state.GameStateMessage;
+import com.borlehandro.networks.snake.messages.state.StateMessage;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;

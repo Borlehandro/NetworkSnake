@@ -2,12 +2,12 @@ package com.borlehandro.networks.snake.message_handlers;
 
 import com.borlehandro.networks.snake.game.repository.PlayersServersRepository;
 import com.borlehandro.networks.snake.game.session.ServerSession;
-import com.borlehandro.networks.snake.protocol.NodeRole;
-import com.borlehandro.networks.snake.protocol.Player;
-import com.borlehandro.networks.snake.protocol.messages.Message;
-import com.borlehandro.networks.snake.protocol.messages.action.JoinMessage;
-import com.borlehandro.networks.snake.protocol.messages.action.RoleChangeMessage;
-import com.borlehandro.networks.snake.protocol.messages.action.SteerMessage;
+import com.borlehandro.networks.snake.model.NodeRole;
+import com.borlehandro.networks.snake.model.Player;
+import com.borlehandro.networks.snake.messages.Message;
+import com.borlehandro.networks.snake.messages.action.JoinMessage;
+import com.borlehandro.networks.snake.messages.action.RoleChangeMessage;
+import com.borlehandro.networks.snake.messages.action.SteerMessage;
 
 import java.net.InetSocketAddress;
 

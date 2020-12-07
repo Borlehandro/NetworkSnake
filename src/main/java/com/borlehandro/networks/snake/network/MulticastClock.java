@@ -1,8 +1,8 @@
 package com.borlehandro.networks.snake.network;
 
 import com.borlehandro.networks.snake.game.repository.PlayersServersRepository;
-import com.borlehandro.networks.snake.protocol.GameConfig;
-import com.borlehandro.networks.snake.protocol.messages.state.AnnouncementMessage;
+import com.borlehandro.networks.snake.model.GameConfig;
+import com.borlehandro.networks.snake.messages.state.AnnouncementMessage;
 
 /**
  * Should be launched by ServerSession or ServerLauncher

@@ -1,7 +1,6 @@
-package com.borlehandro.networks.snake.protocol.messages.action;
+package com.borlehandro.networks.snake.messages.action;
 
-import com.borlehandro.networks.snake.protocol.messages.MessageType;
-import com.borlehandro.networks.snake.protocol.messages.action.ActionMessage;
+import com.borlehandro.networks.snake.messages.MessageType;
 
 public class ErrorMessage extends ActionMessage {
     private final String errorMessage;

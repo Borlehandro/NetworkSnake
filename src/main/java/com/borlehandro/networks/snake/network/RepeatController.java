@@ -1,7 +1,7 @@
 package com.borlehandro.networks.snake.network;
 
-import com.borlehandro.networks.snake.protocol.GameConfig;
-import com.borlehandro.networks.snake.protocol.SendTask;
+import com.borlehandro.networks.snake.model.GameConfig;
+import com.borlehandro.networks.snake.model.SendTask;
 
 import java.util.Map;
 
@@ -10,10 +10,12 @@ public class RepeatController extends Thread {
     private final Map<SendTask, Long> waitResponseMessages;
     private final int pingDelayMillis;
     private final NetworkActionsManager manager;
-    public RepeatController(NetworkActionsManager manager, Map<SendTask, Long> waitResponseMessages, GameConfig config) {
+    private final Map<Integer, Long> lastSentMessagesTime;
+    public RepeatController(NetworkActionsManager manager, Map<SendTask, Long> waitResponseMessages, GameConfig config, Map<Integer, Long> lastSentMessagesTime) {
         this.waitResponseMessages = waitResponseMessages;
         pingDelayMillis = config.getPingDelayMillis();
         this.manager = manager;
+        this.lastSentMessagesTime = lastSentMessagesTime;
     }
 
     @Override
@@ -25,7 +27,8 @@ public class RepeatController extends Thread {
                     var item = iterator.next();
                     SendTask sendTask = item.getKey();
                     long lastTime = item.getValue();
-                    if(System.currentTimeMillis() - lastTime > pingDelayMillis) {
+                    if(System.currentTimeMillis() - lastTime > pingDelayMillis
+                            && lastSentMessagesTime.containsKey(sendTask.getMessage().getReceiverId())) {
                         manager.putSendTask(sendTask);
                         iterator.remove();
                     }

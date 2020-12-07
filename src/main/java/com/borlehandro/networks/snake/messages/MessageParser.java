@@ -1,8 +1,8 @@
-package com.borlehandro.networks.snake.protocol.messages;
+package com.borlehandro.networks.snake.messages;
 
-import com.borlehandro.networks.snake.protocol.messages.action.*;
-import com.borlehandro.networks.snake.protocol.messages.state.AnnouncementMessage;
-import com.borlehandro.networks.snake.protocol.messages.state.GameStateMessage;
+import com.borlehandro.networks.snake.messages.action.*;
+import com.borlehandro.networks.snake.messages.state.AnnouncementMessage;
+import com.borlehandro.networks.snake.messages.state.GameStateMessage;
 import com.google.gson.Gson;
 
 public class MessageParser {

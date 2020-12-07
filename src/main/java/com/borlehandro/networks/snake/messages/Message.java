@@ -1,4 +1,4 @@
-package com.borlehandro.networks.snake.protocol.messages;
+package com.borlehandro.networks.snake.messages;
 
 // TODO Add serialization
 public abstract class Message {

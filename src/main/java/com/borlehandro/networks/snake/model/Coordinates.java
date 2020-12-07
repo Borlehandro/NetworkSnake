@@ -1,4 +1,4 @@
-package com.borlehandro.networks.snake.protocol;
+package com.borlehandro.networks.snake.model;
 
 public class Coordinates {
     private final int x;
