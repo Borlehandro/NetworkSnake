@@ -3,7 +3,7 @@
 
 syntax = "proto2";
 package snakes;
-option java_package = "com.borlehandro.networks.snake";
+option java_package = "com.borlehandro.networks.snake.protobuf";
 option java_outer_classname = "SnakesProto";
 
 // Роль узла в топологии связей узлов в пределах игры

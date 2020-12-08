@@ -1,14 +1,13 @@
 package com.borlehandro.networks.snake.game.session;
 
 import com.borlehandro.networks.snake.game.api.AbstractClientSession;
-import com.borlehandro.networks.snake.game.api.AbstractController;
 import com.borlehandro.networks.snake.game.repository.PlayersServersRepository;
 import com.borlehandro.networks.snake.message_handlers.ClientMessagesHandler;
-import com.borlehandro.networks.snake.model.*;
-import com.borlehandro.networks.snake.network.*;
 import com.borlehandro.networks.snake.messages.action.JoinMessage;
 import com.borlehandro.networks.snake.messages.action.RoleChangeMessage;
 import com.borlehandro.networks.snake.messages.action.SteerMessage;
+import com.borlehandro.networks.snake.model.*;
+import com.borlehandro.networks.snake.network.*;
 import com.borlehandro.networks.snake.ui.GameUiController;
 
 import java.io.IOException;
@@ -22,12 +21,8 @@ import java.util.function.BiConsumer;
 
 public class ClientSession implements AbstractClientSession {
     private BiConsumer<Integer, ServerItem> onNewAnnouncement;
-    private ClientMessagesHandler messagesHandler;
-    private NetworkActionsManager networkManager;
-    private AbstractController abstractController;
     private GameUiController uiController;
     private final PlayersServersRepository playersServersRepository = PlayersServersRepository.getInstance();
-    private AnnounceReceiver announceReceiver;
     private Pinger pinger;
     private GameConfig currentServerConfig;
     private Field field;
@@ -35,9 +30,13 @@ public class ClientSession implements AbstractClientSession {
     private int currentStateOrder = -1;
     private boolean isDeputy = false;
     private ServerItem currentServer;
+    private List<Snake> snakes;
+
+    private ClientMessagesHandler messagesHandler;
+    private NetworkActionsManager networkManager;
     private RepeatController repeatController;
     private OfflineMonitor offlineMonitor;
-    private List<Snake> snakes;
+    private AnnounceReceiver announceReceiver;
 
     public void start(BiConsumer<Integer, ServerItem> onNewAnnouncement, int port) throws IOException {
         this.onNewAnnouncement = onNewAnnouncement;
@@ -221,12 +220,13 @@ public class ClientSession implements AbstractClientSession {
             });
             // Todo test
             isDeputy = false;
-
+            System.err.println("223");
             messagesHandler.interrupt();
             pinger.interrupt();
             repeatController.interrupt();
             // networkManager.interrupt();
             announceReceiver.interrupt();
+            System.err.println("228");
 
             Map<Integer, Snake> snakeMap = new HashMap<>();
             snakes.forEach(
@@ -267,15 +267,17 @@ public class ClientSession implements AbstractClientSession {
                             );
                         }
                     });
-
+            System.err.println("270");
             try {
-                ServerSession session = new ServerSession(abstractController, currentServerConfig, snakeMap, field);
-                abstractController.changeSession(session);
+                ServerSession session = new ServerSession(currentServerConfig, snakeMap, field);
+                session.setController(uiController);
+                uiController.changeSession(session);
+
                 session.startWithContext(networkManager, currentStateOrder);
+                System.err.println("276");
             } catch (SocketException e) {
                 e.printStackTrace();
             }
-
             offlineMonitor.interrupt();
         }
     }
@@ -286,10 +288,15 @@ public class ClientSession implements AbstractClientSession {
                 new RoleChangeMessage(NodeRole.VIEWER, NodeRole.MASTER, MessagesCounter.next(), myId, 0),
                 currentServer.getAddress()
         ));
-        // Todo interrupt all threads
-    }
 
-    public void setAbstractController(AbstractController abstractController) {
-        this.abstractController = abstractController;
+        // Todo interrupt all threads
+        System.err.println("EXIT !!!");
+        networkManager.interrupt();
+        pinger.interrupt();
+        offlineMonitor.interrupt();
+        repeatController.interrupt();
+        messagesHandler.interrupt();
+        announceReceiver.interrupt();
+
     }
 }

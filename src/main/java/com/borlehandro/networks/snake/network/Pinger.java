@@ -30,18 +30,21 @@ public class Pinger extends Thread {
     @Override
     public void run() {
         while (!interrupted()) {
-            synchronized (lastSentMessageTime) {
-                lastSentMessageTime.forEach((key, value) -> {
-                            if (System.currentTimeMillis() - value > pingDelayMillis) {
-                                // System.err.println("I send ping from " + senderId + " to " + getAddressFunction.apply(key));
-                                // Todo Test ping fix
-                                manager.putSendTask(
-                                        new SendTask(
-                                                new PingMessage(MessagesCounter.next(), senderId, key),
-                                                getAddressFunction.apply(key)));
+            // Todo test synchronized
+            synchronized (manager) {
+                synchronized (lastSentMessageTime) {
+                    lastSentMessageTime.forEach((key, value) -> {
+                                if (System.currentTimeMillis() - value > pingDelayMillis) {
+                                    // System.err.println("I send ping from " + senderId + " to " + getAddressFunction.apply(key));
+                                    // Todo Test ping fix
+                                    manager.putSendTask(
+                                            new SendTask(
+                                                    new PingMessage(MessagesCounter.next(), senderId, key),
+                                                    getAddressFunction.apply(key)));
+                                }
                             }
-                        }
-                );
+                    );
+                }
             }
             try {
                 sleep(pingDelayMillis);

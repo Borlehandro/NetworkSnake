@@ -19,6 +19,9 @@ import javafx.scene.paint.Color;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import static javafx.stage.WindowEvent.WINDOW_CLOSE_REQUEST;
 
 public class GameUiController {
 
@@ -32,12 +35,15 @@ public class GameUiController {
     private final ObservableMap<Integer, Player> players = FXCollections.observableHashMap();
 
     public void onStateUpdate(Field field, Map<Integer, Player> players) {
-        this.players.putAll(players);
-        Platform.runLater(() -> drawField(field));
+        Platform.runLater(() -> {
+            this.players.putAll(players);
+            scoreList.getItems().setAll(players.values().stream()
+                    .map(player -> player.getName() + " : " + player.getScore()).collect(Collectors.toList()));
+            drawField(field);
+        });
     }
 
     public void onButtonPressed(KeyEvent keyEvent) {
-        // Todo control button
         System.err.println("============== KEY PRESSED ==============" + keyEvent.getCode());
         Snake.Direction direction = switch (keyEvent.getCode()) {
             case W, UP -> Snake.Direction.UP;
@@ -91,14 +97,22 @@ public class GameUiController {
 
     public void setSession(Session session) {
         this.session = session;
+        // Todo remove
         players.addListener((MapChangeListener<? super Integer, ? super Player>) change -> {
             if (change.wasAdded())
                 scoreList.getItems().add(change.getValueAdded().getName() + ":" + change.getValueAdded().getScore());
-            if (change.wasRemoved())
+            if (change.wasRemoved()) {
+                System.err.println("REMOVE !!!!!!!!!!!!!!!!!!!!!!!!!");
                 scoreList.getItems().remove((int) change.getKey());
+            } else {
+                System.err.println("CHANGE !!!!!!!!!!!!!!!!!!!!!!!!!");
+                scoreList.getItems().remove((int) change.getKey());
+                System.err.println(change.getValueAdded().getName() + ":" + change.getValueAdded().getScore());
+                scoreList.getItems().add(change.getValueAdded().getName() + ":" + change.getValueAdded().getScore());
+            }
         });
         fieldPane.getChildren().add(fieldCanvas);
-        // Todo test focus
+        // Todo set list view unfocused
         Platform.runLater(() -> fieldPane.requestFocus());
         fieldPane.setOnKeyPressed(keyEvent -> {
             onButtonPressed(keyEvent);
@@ -107,7 +121,17 @@ public class GameUiController {
         scoreList.setOnKeyPressed(keyEvent -> {
             System.out.println("PRESS LIST");
         });
+        // Todo Test exit
+        Platform.runLater(() -> fieldPane.getScene().getWindow().setOnCloseRequest(windowEvent -> {
+            if (windowEvent.getEventType().equals(WINDOW_CLOSE_REQUEST)) {
+                session.exit();
+            }
+        }));
         // test
         // fieldPane.getChildren().add(new Canvas(100, 100));
+    }
+
+    public void changeSession(Session session) {
+        this.session = session;
     }
 }

@@ -38,7 +38,7 @@ public class NetworkActionsManager extends Thread {
         this.port = port;
     }
 
-    public synchronized void changeMessageHandler(MessagesHandler messagesHandler) {
+    public void changeMessageHandler(MessagesHandler messagesHandler) {
         // Todo test and fix
         synchronized (messagesQueue) {
             this.handler = messagesHandler;
@@ -49,6 +49,7 @@ public class NetworkActionsManager extends Thread {
     public void run() {
         Gson gson = new GsonBuilder().enableComplexMapKeySerialization().create();
         while (!interrupted()) {
+            // Todo test synchronized
             // Send unicast
             synchronized (messagesQueue) {
 
@@ -59,7 +60,7 @@ public class NetworkActionsManager extends Thread {
                 if (!messagesQueue.isEmpty()) {
                     var sendTask = messagesQueue.pollFirst();
                     var messageJson = gson.toJson(sendTask.getMessage());
-                    // System.err.println("in q: " + sendTask.getMessage().getType());
+                    System.err.println("in q: " + sendTask.getMessage().getType());
                     // Debug
 
 
@@ -76,22 +77,24 @@ public class NetworkActionsManager extends Thread {
                             sendTask.getReceiverAddress());
                     try {
                         socket.send(datagram);
-                        System.err.println("Send"+ sendTask.getMessage().getType() + "on " + System.currentTimeMillis() + " to " + sendTask.getMessage().getReceiverId());
+                        System.err.println("Send" + sendTask.getMessage().getType() + " on " + System.currentTimeMillis() + " to " + sendTask.getMessage().getReceiverId());
                         // Todo test
-                        // System.err.println("67");
-                        repository.updateLastSentMessageTimeMillis(sendTask.getMessage().getReceiverId(), System.currentTimeMillis(), false);
-                        // System.err.println("69");
+                        System.err.println("81");
+                        synchronized (this) {
+                            repository.updateLastSentMessageTimeMillis(sendTask.getMessage().getReceiverId(), System.currentTimeMillis(), false);
+                        }
+                        System.err.println("83");
                         if (!sendTask.getMessage().getType().equals(MessageType.ACK_MESSAGE) &&
                                 !sendTask.getMessage().getType().equals(MessageType.PING_MESSAGE)) {
                             synchronized (waitResponseMessages) {
                                 waitResponseMessages.put(sendTask, System.currentTimeMillis());
                             }
                         }
-                        // System.err.println("75");
+                        System.err.println("90");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    // System.err.println("message Queue 50 off");
+                    System.err.println("94");
                 }
             }
             // Receive
@@ -118,12 +121,12 @@ public class NetworkActionsManager extends Thread {
                         !message.getType().equals(MessageType.PING_MESSAGE)) {
                     // Todo test fake id!
                     synchronized (messagesQueue) {
-                        // System.err.println("message Queue 120");
+                        System.err.println("message Queue 121");
                         messagesQueue.addLast(new SendTask(
-                                new AckMessage(message.getMessageNumber(), myId, message.getReceiverId()),
+                                new AckMessage(message.getMessageNumber(), myId, message.getSenderId()),
                                 receivedPacket.getSocketAddress()
                         ));
-                        // System.err.println("message Queue 120 off");
+                        System.err.println("message Queue 126");
                     }
                 }
                 if (message.getType().equals(MessageType.JOIN_MESSAGE))
@@ -156,13 +159,14 @@ public class NetworkActionsManager extends Thread {
         }
     }
 
+    // Todo test synchronized
     public void putSendTask(SendTask message) {
-        // System.err.println("Try to put " + message.getMessage().getType());
+        System.err.println("Try to put " + message.getMessage().getType());
         synchronized (messagesQueue) {
-            // System.err.println("message Queue 142");
+            System.err.println("162");
             messagesQueue.addLast(message);
             // System.err.println("I put in queue " + message.getMessage().getType());
-            // System.err.println("message Queue 142 off");
+            System.err.println("165");
         }
     }
 

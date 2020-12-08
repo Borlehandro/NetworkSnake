@@ -1,8 +1,10 @@
 package com.borlehandro.networks.snake.ui;
 
 import com.borlehandro.networks.snake.game.api.AbstractClientSession;
+import com.borlehandro.networks.snake.game.api.Session;
 import com.borlehandro.networks.snake.game.launcher.ClientLauncher;
-import com.borlehandro.networks.snake.game.session.ClientSession;
+import com.borlehandro.networks.snake.game.launcher.ServerLauncher;
+import com.borlehandro.networks.snake.game.session.ServerSession;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -19,6 +21,22 @@ public class MenuController {
 
     public void onStartServerClick() {
         System.out.println("start server");
+        // Todo fix port
+        try {
+            Session session = ServerLauncher.launch(8080);
+            // Launch game window
+            FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("game_layout.fxml"));
+            Parent root = loader.load();
+            Stage stage = new Stage();
+            stage.setScene(new Scene(root, 720, 360));
+            var gameController = (GameUiController) loader.getController();
+            session.setController(gameController);
+            gameController.setSession(session);
+            menuBox.getScene().getWindow().hide();
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void onConnectClick() {

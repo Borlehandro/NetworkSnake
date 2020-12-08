@@ -8,6 +8,7 @@ import com.borlehandro.networks.snake.model.Snake;
 public class MoveController {
 
     private final Field field;
+    private final ScoreManager scoreManager = ScoreManager.getInstance();
 
     public MoveController(Field field) {
         this.field = field;
@@ -49,6 +50,8 @@ public class MoveController {
             field.getFieldMatrix()[newTailX][newTailY].addSnake(s, false);
             s.clearLastTail();
             s.setHadFood(false);
+            // Todo Test score
+            scoreManager.incrementScore(s.getPlayerId());
         }
     }
 

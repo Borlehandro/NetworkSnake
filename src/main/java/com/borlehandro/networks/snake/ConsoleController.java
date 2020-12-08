@@ -1,6 +1,5 @@
 package com.borlehandro.networks.snake;
 
-import com.borlehandro.networks.snake.game.api.AbstractController;
 import com.borlehandro.networks.snake.game.api.Session;
 import com.borlehandro.networks.snake.model.Snake;
 
@@ -8,7 +7,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-public class ConsoleController extends Thread implements AbstractController {
+public class ConsoleController extends Thread {
 
     private Session session;
 

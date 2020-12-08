@@ -1,12 +1,9 @@
 package com.borlehandro.networks.snake.game.session;
 
-import com.borlehandro.networks.snake.ConsoleController;
-import com.borlehandro.networks.snake.game.api.AbstractController;
 import com.borlehandro.networks.snake.game.api.Session;
 import com.borlehandro.networks.snake.game.repository.PlayersServersRepository;
 import com.borlehandro.networks.snake.game.CollisionHandler;
 import com.borlehandro.networks.snake.game.MoveController;
-import com.borlehandro.networks.snake.game.ScoreManager;
 import com.borlehandro.networks.snake.game.SnakesCollisionController;
 import com.borlehandro.networks.snake.game.spawn.FoodSpawner;
 import com.borlehandro.networks.snake.game.spawn.SnakeSpawner;
@@ -31,11 +28,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ServerSession implements Session {
-    private NetworkActionsManager networkManager;
-    private AbstractController abstractController;
     private GameUiController uiController;
     private final PlayersServersRepository playersRepository = PlayersServersRepository.getInstance();
-    private final ScoreManager scoreManager = new ScoreManager();
     private final Map<Integer, Snake> snakeMap;
     private final Map<Integer, Snake.Direction> rotationsPool = new HashMap<>();
     private final Field field;
@@ -45,13 +39,16 @@ public class ServerSession implements Session {
     private final SnakesCollisionController collisionController;
     private final FoodSpawner foodSpawner;
     private final SnakeSpawner snakeSpawner;
+    private CollisionHandler collisionHandler;
+
+    private NetworkActionsManager networkManager;
     private ServerMessagesHandler messagesHandler;
     private OfflineMonitor offlineMonitor;
     private GameClock gameClock;
     private MulticastClock multicastClock;
     private RepeatController repeatController;
     private Pinger pinger;
-    private CollisionHandler collisionHandler;
+
     private final AtomicInteger stateOrder = new AtomicInteger(0);
     private int deputyId = -1;
 
@@ -72,8 +69,7 @@ public class ServerSession implements Session {
         );
     }
 
-    public ServerSession(AbstractController abstractController, GameConfig config, Map<Integer, Snake> snakeMap, Field field) {
-        this.abstractController = abstractController;
+    public ServerSession(GameConfig config, Map<Integer, Snake> snakeMap, Field field) {
         this.config = config;
         this.field = field;
         this.snakeMap = snakeMap;
@@ -92,12 +88,17 @@ public class ServerSession implements Session {
 
     public void startWithContext(NetworkActionsManager networkManager, int stateOrderValue) throws SocketException {
         messagesHandler = new ServerMessagesHandler(this);
-        networkManager.changeMessageHandler(messagesHandler);
+        System.err.println("90");
+        synchronized (networkManager) {
+            networkManager.changeMessageHandler(messagesHandler);
+        }
+        System.err.println("95");
         this.networkManager = networkManager;
         gameClock = new GameClock(this, config);
         collisionHandler = new CollisionHandler(snakeMap, this);
         stateOrder.set(stateOrderValue);
         playersRepository.setPlayersNumber(playersRepository.getPlayers().size());
+        System.err.println("101");
         // Todo test
         var opt = playersRepository.getPlayers().stream().filter(player -> player.getId() > 0).findAny();
         opt.ifPresent(player ->
@@ -109,11 +110,13 @@ public class ServerSession implements Session {
     }
 
     public void init() {
+        System.err.println("111");
         gameClock.start();
         messagesHandler.start();
         networkManager.setMyId(0);
         if (!networkManager.isAlive())
             networkManager.start();
+        System.err.println("117");
         multicastClock = new MulticastClock(networkManager, config);
         multicastClock.start();
         offlineMonitor = new OfflineMonitor(this, config, playersRepository.getLastReceivedMessageTimeMillis());
@@ -206,6 +209,8 @@ public class ServerSession implements Session {
         synchronized (snakeMap) {
             synchronized (rotationsPool) {
                 System.err.println("Next step all monitors: " + System.currentTimeMillis());
+                playersRepository.getPlayersMap()
+                        .forEach((integer, player) -> System.out.println(player.toString()));
                 // Rotate all snakes in rotationPool
                 // TODO Use iterator and remove from pool
                 rotationsPool.forEach((id, direction) -> {
@@ -237,6 +242,9 @@ public class ServerSession implements Session {
                 //  I must start next clock step when this step will be completed
             }
         }
+        // Test UI
+        uiController.onStateUpdate(field, playersRepository.getPlayersMap());
+
         // Test only
         // Field showing
         var matrix = field.getFieldMatrix();
@@ -347,18 +355,22 @@ public class ServerSession implements Session {
 
     // Todo test synchronized
     public void exit() {
-        // Todo Test send message to deputy
+        System.err.println("EXIT");
         if (deputyId != -1) {
             networkManager.putSendTask(new SendTask(
                     new RoleChangeMessage(NodeRole.MASTER, NodeRole.MASTER, MessagesCounter.next(), 0, deputyId),
                     playersRepository.findPlayerAddressById(deputyId).get()
             ));
-            // Todo interrupt threads
         }
-    }
+        // Todo interrupt threads
+        networkManager.interrupt();
+        pinger.interrupt();
+        offlineMonitor.interrupt();
+        messagesHandler.interrupt();
+        multicastClock.interrupt();
 
-    public void setAbstractController(ConsoleController abstractController) {
-        this.abstractController = abstractController;
+        gameClock.interrupt();
+        repeatController.interrupt();
     }
 
     @Override
