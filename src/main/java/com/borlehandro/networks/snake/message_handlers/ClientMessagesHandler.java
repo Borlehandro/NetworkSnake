@@ -2,13 +2,14 @@ package com.borlehandro.networks.snake.message_handlers;
 
 import com.borlehandro.networks.snake.game.repository.PlayersServersRepository;
 import com.borlehandro.networks.snake.game.session.ClientSession;
+import com.borlehandro.networks.snake.model.NodeRole;
+import com.borlehandro.networks.snake.model.Player;
 import com.borlehandro.networks.snake.model.ServerItem;
-import com.borlehandro.networks.snake.messages.Message;
-import com.borlehandro.networks.snake.messages.action.RoleChangeMessage;
-import com.borlehandro.networks.snake.messages.state.AnnouncementMessage;
-import com.borlehandro.networks.snake.messages.state.GameStateMessage;
+import com.borlehandro.networks.snake.model.Snake;
+import com.borlehandro.networks.snake.protobuf.SnakesProto;
 
 import java.net.InetSocketAddress;
+import java.util.stream.Collectors;
 
 public class ClientMessagesHandler extends MessagesHandler {
 
@@ -29,49 +30,71 @@ public class ClientMessagesHandler extends MessagesHandler {
 //                    tasksToHandle.forEach(System.err::println);
 //                    System.err.println("--------------");
                     var task = tasksToHandle.pollFirst();
-                    Message message = task.getMessage();
+                    SnakesProto.GameMessage message = task.getMessage();
                     InetSocketAddress socketAddress = task.getSocketAddress();
-                    switch (message.getType()) {
-                        case ANNOUNCEMENT_MESSAGE -> {
-                            var msg = (AnnouncementMessage) message;
-                            session.newAnnouncement(new ServerItem(msg.getGameConfig(), msg.getPlayers(), socketAddress));
+                    switch (message.getTypeCase()) {
+                        case ANNOUNCEMENT -> {
+                            var msg = message.getAnnouncement();
+                            session.newAnnouncement(new ServerItem(
+                                    msg.getConfig(),
+                                    msg.getPlayers().getPlayersList().stream()
+                                            .map(Player::ofProtoPlayer)
+                                            .collect(Collectors.toList()),
+                                    socketAddress)
+                            );
                         }
-                        case ACK_MESSAGE -> {
+                        case ACK -> {
                             // Todo add normal handling
                             // Todo fix wrong calls!
                             // System.err.println("ACK");
                             session.acceptServer(message.getReceiverId());
                         }
-                        case GAME_STATE_MESSAGE -> {
+                        case STATE -> {
                             // Field update
-                            var stateMessage = (GameStateMessage) message;
+                            var stateMessage = message.getState().getState();
                             session.updateState(
                                     stateMessage.getStateOrder(),
-                                    stateMessage.getSnakes(),
-                                    stateMessage.getFoodCoordinates(),
-                                    stateMessage.getPlayers(),
+                                    stateMessage.getSnakesList().stream()
+                                            .map(Snake::ofProtoSnake)
+                                            .collect(Collectors.toList()),
+                                    stateMessage.getFoodsList(),
+                                    stateMessage.getPlayers().getPlayersList().stream()
+                                            .map(Player::ofProtoPlayer)
+                                            .collect(Collectors.toList()),
                                     stateMessage.getConfig()
                             );
                         }
-                        case ROLE_CHANGE_MESSAGE -> {
-                            var roleMessage = (RoleChangeMessage) message;
+                        case ROLE_CHANGE -> {
+                            var roleMessage = message.getRoleChange();
                             // Todo fix for another roles changing.
                             //  Use socket address.
-                            session.onRolesChanged(roleMessage.getSenderRole(),
-                                    roleMessage.getReceiverRole(),
-                                    roleMessage.getSenderId());
+                            session.onRolesChanged(
+                                    switch (roleMessage.getSenderRole()) {
+                                        case MASTER -> NodeRole.MASTER;
+                                        case DEPUTY -> NodeRole.DEPUTY;
+                                        case NORMAL -> NodeRole.NORMAL;
+                                        case VIEWER -> NodeRole.VIEWER;
+                                    },
+                                    switch (roleMessage.getReceiverRole()) {
+                                        case MASTER -> NodeRole.MASTER;
+                                        case DEPUTY -> NodeRole.DEPUTY;
+                                        case NORMAL -> NodeRole.NORMAL;
+                                        case VIEWER -> NodeRole.VIEWER;
+                                    },
+                                    message.getSenderId());
                         }
-                        case PING_MESSAGE -> {
+                        case PING -> {
                             // System.err.println("PING");
                         }
                     }
                 }
             }
         }
+
     }
 
     @Override
-    public void handleMessage(Message message, InetSocketAddress socketAddress) {
+    public void handleMessage(SnakesProto.GameMessage message, InetSocketAddress socketAddress) {
         // Todo test
         System.err.println("UPDATE RECEIVED for " + message.getSenderId() + " to " + System.currentTimeMillis());
         serversRepository.updateLastReceivedMessageTimeMillis(message.getSenderId(), System.currentTimeMillis(), false);

@@ -1,13 +1,12 @@
 package com.borlehandro.networks.snake.network;
 
 import com.borlehandro.networks.snake.message_handlers.MessagesHandler;
-import com.borlehandro.networks.snake.messages.Message;
-import com.borlehandro.networks.snake.messages.state.AnnouncementMessage;
-import com.google.gson.Gson;
+import com.borlehandro.networks.snake.protobuf.SnakesProto;
 import com.google.gson.JsonSyntaxException;
 
 import java.io.IOException;
 import java.net.*;
+import java.util.Arrays;
 
 /**
  * Receive multicast messages
@@ -29,14 +28,15 @@ public class AnnounceReceiver extends Thread {
     }
 
     public void run() {
-        Gson gson = new Gson();
         while (!interrupted()) {
             try {
                 byte[] buffer = new byte[2048]; // 2 Kb
                 var receivedDatagram = new DatagramPacket(buffer, buffer.length);
                 socket.receive(receivedDatagram);
-                String s = new String(buffer, 0, receivedDatagram.getLength());
-                Message message = gson.fromJson(s, AnnouncementMessage.class);
+                // String s = new String(buffer, 0, receivedDatagram.getLength());
+                System.err.println("Multicast receive: " + Arrays.toString(receivedDatagram.getData()));
+                byte[] bytes = Arrays.copyOf(receivedDatagram.getData(), receivedDatagram.getLength());
+                SnakesProto.GameMessage message = SnakesProto.GameMessage.parseFrom(bytes);
                 var socketAddress = new InetSocketAddress(receivedDatagram.getAddress(), receivedDatagram.getPort());
                 messagesHandler.handleMessage(message, socketAddress);
             } catch (IOException e) {

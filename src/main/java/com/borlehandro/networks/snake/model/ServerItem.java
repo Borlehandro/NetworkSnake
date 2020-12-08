@@ -1,21 +1,23 @@
 package com.borlehandro.networks.snake.model;
 
+import com.borlehandro.networks.snake.protobuf.SnakesProto;
+
 import java.net.SocketAddress;
 import java.util.List;
 import java.util.Objects;
 
 public class ServerItem {
-    private final GameConfig config;
+    private final SnakesProto.GameConfig config;
     private final List<Player> players;
     private SocketAddress address;
 
-    public ServerItem(GameConfig config, List<Player> players, SocketAddress address) {
+    public ServerItem(SnakesProto.GameConfig config, List<Player> players, SocketAddress address) {
         this.config = config;
         this.players = players;
         this.address = address;
     }
 
-    public GameConfig getConfig() {
+    public SnakesProto.GameConfig getConfig() {
         return config;
     }
 

@@ -1,5 +1,7 @@
 package com.borlehandro.networks.snake.model;
 
+import com.borlehandro.networks.snake.protobuf.SnakesProto;
+
 import java.util.List;
 
 public class Field {
@@ -65,7 +67,7 @@ public class Field {
         }
     }
 
-    public void setFood(List<Coordinates> foodCoordinates) {
+    public void setFood(List<SnakesProto.GameState.Coord> foodCoordinates) {
         foodCoordinates.forEach(coordinate ->
                 fieldMatrix[coordinate.getX()][coordinate.getY()].setState(FieldNode.State.WITH_FOOD));
         currentFood = foodCoordinates.size();

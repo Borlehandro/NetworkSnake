@@ -1,6 +1,6 @@
 package com.borlehandro.networks.snake;
 
-import com.borlehandro.networks.snake.model.GameConfig;
+import com.borlehandro.networks.snake.protobuf.SnakesProto;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -24,17 +24,17 @@ public class PropertiesLoader {
         return INSTANCE;
     }
 
-    public GameConfig loadGameConfig() {
-        return GameConfig
-                .builder()
-                .withWidth(Integer.parseInt(properties.getOrDefault("width", 40).toString()))
-                .withHeight(Integer.parseInt(properties.getOrDefault("height", 40).toString()))
-                .withFoodStatic(Integer.parseInt(properties.getOrDefault("food_static", 1).toString()))
-                .withFoodPerPlayer(Integer.parseInt(properties.getOrDefault("food_per_player", 1).toString()))
-                .withStateDelayMillis(Integer.parseInt(properties.getOrDefault("state_delay_ms", 1000).toString()))
-                .withDeadFoodProb(Double.parseDouble(properties.getOrDefault("dead_food_prob", 0.1).toString()))
-                .withPingDelayMillis(Integer.parseInt(properties.getOrDefault("ping_delay_ms", 100).toString()))
-                .withNodeTimeoutMillis(Integer.parseInt(properties.getOrDefault("node_timeout_millis", 800).toString()))
+    public SnakesProto.GameConfig loadGameConfig() {
+        return SnakesProto.GameConfig
+                .newBuilder()
+                .setWidth(Integer.parseInt(properties.getOrDefault("width", 40).toString()))
+                .setHeight(Integer.parseInt(properties.getOrDefault("height", 40).toString()))
+                .setFoodStatic(Integer.parseInt(properties.getOrDefault("food_static", 1).toString()))
+                .setFoodPerPlayer(Integer.parseInt(properties.getOrDefault("food_per_player", 1).toString()))
+                .setStateDelayMs(Integer.parseInt(properties.getOrDefault("state_delay_ms", 1000).toString()))
+                .setDeadFoodProb(Float.parseFloat(properties.getOrDefault("dead_food_prob", 0.1).toString()))
+                .setPingDelayMs(Integer.parseInt(properties.getOrDefault("ping_delay_ms", 100).toString()))
+                .setNodeTimeoutMs(Integer.parseInt(properties.getOrDefault("node_timeout_millis", 800).toString()))
                 .build();
     }
 

@@ -1,6 +1,9 @@
 package com.borlehandro.networks.snake.model;
 
+import com.borlehandro.networks.snake.protobuf.SnakesProto;
+
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Snake {
 
@@ -116,8 +119,16 @@ public class Snake {
                     '}';
         }
     }
-
-    public void setChangeDirectionNode(LinkedHashMap<Node, Direction> changeDirectionNode) {
-        this.changeDirectionNode = changeDirectionNode;
+    // Todo test
+    public static Snake ofProtoSnake(SnakesProto.GameState.Snake protoSnake) {
+        Snake s = new Snake(protoSnake.getPlayerId());
+        // It's fake direction!
+        s.body.addAll(protoSnake.getPointsList().stream().map(coord ->
+                new SnakeNode(coord.getX(), coord.getY(), Direction.UP)).collect(Collectors.toList()));
+        s.state = switch (protoSnake.getState()) {
+            case ALIVE -> SnakeState.ALIVE;
+            case ZOMBIE -> SnakeState.ZOMBIE;
+        };
+        return s;
     }
 }

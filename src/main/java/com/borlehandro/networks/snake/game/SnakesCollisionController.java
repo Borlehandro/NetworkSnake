@@ -3,7 +3,7 @@ package com.borlehandro.networks.snake.game;
 import com.borlehandro.networks.snake.model.Field;
 import com.borlehandro.networks.snake.model.FieldNode;
 import com.borlehandro.networks.snake.model.Snake;
-import com.borlehandro.networks.snake.model.GameConfig;
+import com.borlehandro.networks.snake.protobuf.SnakesProto;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -14,7 +14,7 @@ public class SnakesCollisionController {
     private final double deadFoodProbability;
     private final ScoreManager scoreManager = ScoreManager.getInstance();
 
-    public SnakesCollisionController(Field field, Collection<Snake> snakes, GameConfig config) {
+    public SnakesCollisionController(Field field, Collection<Snake> snakes, SnakesProto.GameConfig config) {
         this.field = field;
         this.snakes = snakes;
         deadFoodProbability = config.getDeadFoodProb();

@@ -1,7 +1,7 @@
 package com.borlehandro.networks.snake.game.repository;
 
-import com.borlehandro.networks.snake.model.ServerItem;
 import com.borlehandro.networks.snake.model.Player;
+import com.borlehandro.networks.snake.model.ServerItem;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;

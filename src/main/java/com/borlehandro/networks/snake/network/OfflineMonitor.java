@@ -1,7 +1,7 @@
 package com.borlehandro.networks.snake.network;
 
 import com.borlehandro.networks.snake.game.api.Session;
-import com.borlehandro.networks.snake.model.GameConfig;
+import com.borlehandro.networks.snake.protobuf.SnakesProto;
 
 import java.util.List;
 import java.util.Map;
@@ -13,10 +13,10 @@ public class OfflineMonitor extends Thread {
     private final int pingDelayMillis;
     private final Map<Integer, Long> lastReceivedMessageMillis;
 
-    public OfflineMonitor(Session session, GameConfig gameConfig, Map<Integer, Long> lastReceivedMessageMillis) {
+    public OfflineMonitor(Session session, SnakesProto.GameConfig gameConfig, Map<Integer, Long> lastReceivedMessageMillis) {
         this.session = session;
-        this.nodeTimeoutMillis = gameConfig.getNodeTimeoutMillis();
-        this.pingDelayMillis = gameConfig.getPingDelayMillis();
+        this.nodeTimeoutMillis = gameConfig.getNodeTimeoutMs();
+        this.pingDelayMillis = gameConfig.getPingDelayMs();
         this.lastReceivedMessageMillis = lastReceivedMessageMillis;
     }
 

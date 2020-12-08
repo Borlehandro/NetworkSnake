@@ -1,7 +1,7 @@
 package com.borlehandro.networks.snake.network;
 
-import com.borlehandro.networks.snake.model.GameConfig;
 import com.borlehandro.networks.snake.model.SendTask;
+import com.borlehandro.networks.snake.protobuf.SnakesProto;
 
 import java.util.Map;
 
@@ -11,9 +11,9 @@ public class RepeatController extends Thread {
     private final int pingDelayMillis;
     private final NetworkActionsManager manager;
     private final Map<Integer, Long> lastSentMessagesTime;
-    public RepeatController(NetworkActionsManager manager, Map<SendTask, Long> waitResponseMessages, GameConfig config, Map<Integer, Long> lastSentMessagesTime) {
+    public RepeatController(NetworkActionsManager manager, Map<SendTask, Long> waitResponseMessages, SnakesProto.GameConfig config, Map<Integer, Long> lastSentMessagesTime) {
         this.waitResponseMessages = waitResponseMessages;
-        pingDelayMillis = config.getPingDelayMillis();
+        pingDelayMillis = config.getPingDelayMs();
         this.manager = manager;
         this.lastSentMessagesTime = lastSentMessagesTime;
     }

@@ -12,12 +12,10 @@ import javafx.collections.ObservableMap;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.ListView;
-import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 

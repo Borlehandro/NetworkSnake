@@ -3,11 +3,10 @@ package com.borlehandro.networks.snake.game.session;
 import com.borlehandro.networks.snake.game.api.AbstractClientSession;
 import com.borlehandro.networks.snake.game.repository.PlayersServersRepository;
 import com.borlehandro.networks.snake.message_handlers.ClientMessagesHandler;
-import com.borlehandro.networks.snake.messages.action.JoinMessage;
-import com.borlehandro.networks.snake.messages.action.RoleChangeMessage;
-import com.borlehandro.networks.snake.messages.action.SteerMessage;
+import com.borlehandro.networks.snake.messages.factory.MessageFactory;
 import com.borlehandro.networks.snake.model.*;
 import com.borlehandro.networks.snake.network.*;
+import com.borlehandro.networks.snake.protobuf.SnakesProto;
 import com.borlehandro.networks.snake.ui.GameUiController;
 
 import java.io.IOException;
@@ -19,12 +18,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
+import static com.borlehandro.networks.snake.protobuf.SnakesProto.NodeRole.*;
+
 public class ClientSession implements AbstractClientSession {
     private BiConsumer<Integer, ServerItem> onNewAnnouncement;
     private GameUiController uiController;
     private final PlayersServersRepository playersServersRepository = PlayersServersRepository.getInstance();
     private Pinger pinger;
-    private GameConfig currentServerConfig;
+    private SnakesProto.GameConfig currentServerConfig;
     private Field field;
     private int myId = -1;
     private int currentStateOrder = -1;
@@ -37,6 +38,8 @@ public class ClientSession implements AbstractClientSession {
     private RepeatController repeatController;
     private OfflineMonitor offlineMonitor;
     private AnnounceReceiver announceReceiver;
+
+    private MessageFactory messageFactory = MessageFactory.getInstance();
 
     public void start(BiConsumer<Integer, ServerItem> onNewAnnouncement, int port) throws IOException {
         this.onNewAnnouncement = onNewAnnouncement;
@@ -66,14 +69,15 @@ public class ClientSession implements AbstractClientSession {
     public void joinGame(int serverItemId, String userName) {
         playersServersRepository.setServerToConnectId(serverItemId);
         networkManager.putSendTask(new SendTask(
-                new JoinMessage(userName, MessagesCounter.next(), 1000, 0),
+                // Todo fix to normal id
+                messageFactory.createJoinMessage(MessagesCounter.next(), 1000, 0, userName),
                 playersServersRepository.getServersCopy().get(serverItemId).getAddress()));
     }
 
     @Override
     public void rotate(Snake.Direction direction) {
         networkManager.putSendTask(new SendTask(
-                new SteerMessage(direction, MessagesCounter.next(), myId, 0),
+                messageFactory.createSteerMessage(MessagesCounter.next(), myId, 0, direction),
                 currentServer.getAddress()));
     }
 
@@ -84,21 +88,23 @@ public class ClientSession implements AbstractClientSession {
 
     public void updateState(int stateOrder,
                             List<Snake> snakes,
-                            List<Coordinates> foodCoordinates,
+                            List<SnakesProto.GameState.Coord> foodCoordinates,
                             Collection<Player> players,
-                            GameConfig config) {
+                            SnakesProto.GameConfig config) {
         if (stateOrder > currentStateOrder && myId > 0) {
             players.forEach(playersServersRepository::putPlayer);
             // Just update field
             if (this.field == null)
-                field = new Field(config.getFieldHeight(), config.getFieldWidth());
+                field = new Field(config.getHeight(), config.getWidth());
             field.clear();
             field.setFood(foodCoordinates);
             field.setSnakes(snakes);
             this.snakes = snakes;
             currentStateOrder = stateOrder;
-            // Todo test UI
-            uiController.onStateUpdate(field, playersServersRepository.getPlayersMap());
+            if(uiController!=null) {
+                // Todo test UI
+                uiController.onStateUpdate(field, playersServersRepository.getPlayersMap());
+            }
             // Test only
             // Field showing
             var matrix = field.getFieldMatrix();
@@ -141,7 +147,7 @@ public class ClientSession implements AbstractClientSession {
                 playersServersRepository.getPlayers().forEach(player ->
                         // Todo use myId or 0?
                         networkManager.putSendTask(new SendTask(
-                                new RoleChangeMessage(NodeRole.MASTER, NodeRole.NORMAL, MessagesCounter.next(), myId, player.getId()),
+                                messageFactory.createRoleChangeMessage(MessagesCounter.next(), myId, player.getId(), MASTER, NORMAL),
                                 playersServersRepository.findPlayerAddressById(player.getId()).get()
                         ))
                 );
@@ -153,7 +159,7 @@ public class ClientSession implements AbstractClientSession {
             currentServer.changeSocketAddress(playersServersRepository.findPlayerAddressById(senderId).get());
             playersServersRepository.getLastReceivedMessageTimeMillis().replace(
                     playersServersRepository.getCurrentServerId(),
-                    System.currentTimeMillis() + currentServerConfig.getStateDelayMillis()
+                    System.currentTimeMillis() + currentServerConfig.getStateDelayMs()
             );
         }
     }
@@ -191,7 +197,7 @@ public class ClientSession implements AbstractClientSession {
                         currentServerConfig, playersServersRepository.getLastSentMessageTimeMillis());
                 repeatController.start();
                 playersServersRepository.getLastReceivedMessageTimeMillis().put(
-                        0, System.currentTimeMillis() + currentServerConfig.getStateDelayMillis()
+                        0, System.currentTimeMillis() + currentServerConfig.getStateDelayMs()
                 );
                 offlineMonitor = new OfflineMonitor(
                         this,
@@ -213,7 +219,7 @@ public class ClientSession implements AbstractClientSession {
             playersServersRepository.getPlayers().forEach(player -> {
                 if (player.getId() > 0 && player.getId() != myId) {
                     networkManager.putSendTask(new SendTask(
-                            new RoleChangeMessage(NodeRole.MASTER, NodeRole.NORMAL, MessagesCounter.next(), myId, player.getId()),
+                            messageFactory.createRoleChangeMessage(MessagesCounter.next(), myId, player.getId(), MASTER, NORMAL),
                             new InetSocketAddress(player.getIpAddress(), player.getPort())
                     ));
                 }
@@ -263,7 +269,7 @@ public class ClientSession implements AbstractClientSession {
                         if (player.getId() > 0) {
                             latsSend.put(player.getId(), 0L);
                             lastReceive.put(player.getId(),
-                                    System.currentTimeMillis() + currentServerConfig.getNodeTimeoutMillis()
+                                    System.currentTimeMillis() + currentServerConfig.getNodeTimeoutMs()
                             );
                         }
                     });
@@ -285,7 +291,7 @@ public class ClientSession implements AbstractClientSession {
     @Override
     public void exit() {
         networkManager.putSendTask(new SendTask(
-                new RoleChangeMessage(NodeRole.VIEWER, NodeRole.MASTER, MessagesCounter.next(), myId, 0),
+                messageFactory.createRoleChangeMessage(MessagesCounter.next(), myId, 0, VIEWER, MASTER),
                 currentServer.getAddress()
         ));
 

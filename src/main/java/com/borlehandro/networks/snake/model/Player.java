@@ -1,5 +1,7 @@
 package com.borlehandro.networks.snake.model;
 
+import com.borlehandro.networks.snake.protobuf.SnakesProto;
+
 import java.util.Objects;
 import java.util.Optional;
 
@@ -137,5 +139,18 @@ public class Player {
     @Override
     public int hashCode() {
         return Objects.hash(id);
+    }
+
+    public static Player ofProtoPlayer(SnakesProto.GamePlayer protoPlayer) {
+        Player player = new Player(protoPlayer.getName(), protoPlayer.getIpAddress(), protoPlayer.getPort());
+        player.id = protoPlayer.getId();
+        player.score = protoPlayer.getScore();
+        player.role = switch (protoPlayer.getRole()) {
+            case VIEWER -> NodeRole.VIEWER;
+            case NORMAL -> NodeRole.NORMAL;
+            case DEPUTY -> NodeRole.DEPUTY;
+            case MASTER -> NodeRole.MASTER;
+        };
+        return player;
     }
 }

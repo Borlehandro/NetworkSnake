@@ -2,28 +2,27 @@ package com.borlehandro.networks.snake.network;
 
 import com.borlehandro.networks.snake.game.repository.PlayersServersRepository;
 import com.borlehandro.networks.snake.message_handlers.MessagesHandler;
+import com.borlehandro.networks.snake.messages.factory.MessageFactory;
 import com.borlehandro.networks.snake.model.SendTask;
-import com.borlehandro.networks.snake.messages.Message;
-import com.borlehandro.networks.snake.messages.MessageParser;
-import com.borlehandro.networks.snake.messages.MessageType;
-import com.borlehandro.networks.snake.messages.action.AckMessage;
-import com.borlehandro.networks.snake.messages.state.AnnouncementMessage;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.borlehandro.networks.snake.protobuf.SnakesProto;
 
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.HashMap;
+
+import static com.borlehandro.networks.snake.protobuf.SnakesProto.GameMessage.TypeCase.*;
 
 /**
  * Send directed messages to players
  */
 public class NetworkActionsManager extends Thread {
+    private final MessageFactory messageFactory = MessageFactory.getInstance();
     private final DatagramSocket socket;
     private final ArrayDeque<SendTask> messagesQueue = new ArrayDeque<>();
     private final HashMap<SendTask, Long> waitResponseMessages = new HashMap<>();
-    private final ArrayDeque<AnnouncementMessage> multicastQueue = new ArrayDeque<>();
+    private final ArrayDeque<SnakesProto.GameMessage> multicastQueue = new ArrayDeque<>();
     private int myId = -1;
     private MessagesHandler handler;
     private final int port;
@@ -47,7 +46,6 @@ public class NetworkActionsManager extends Thread {
 
     @Override
     public void run() {
-        Gson gson = new GsonBuilder().enableComplexMapKeySerialization().create();
         while (!interrupted()) {
             // Todo test synchronized
             // Send unicast
@@ -59,33 +57,35 @@ public class NetworkActionsManager extends Thread {
 
                 if (!messagesQueue.isEmpty()) {
                     var sendTask = messagesQueue.pollFirst();
-                    var messageJson = gson.toJson(sendTask.getMessage());
-                    System.err.println("in q: " + sendTask.getMessage().getType());
+                    var message = sendTask.getMessage();
+                    System.err.println("in q: " + sendTask.getMessage().getTypeCase());
                     // Debug
 
 
-                    if (sendTask.getMessage().getType().equals(MessageType.ACK_MESSAGE))
+                    if (message.getTypeCase().equals(SnakesProto.GameMessage.TypeCase.ACK))
                         System.err.println("Send ACK_MESSAGE " + System.currentTimeMillis());
-                    if (sendTask.getMessage().getType().equals(MessageType.JOIN_MESSAGE))
+                    if (message.getTypeCase().equals(SnakesProto.GameMessage.TypeCase.JOIN))
                         System.err.println("Send JOIN " + System.currentTimeMillis());
-//                    if (sendTask.getMessage().getType().equals(MessageType.GAME_STATE_MESSAGE))
+//                    if (sendTask.getMessage().getTypeCase().equals(MessageType.GAME_STATE_MESSAGE))
 //                        System.err.println("Send game state message to " + sendTask.getMessage().getReceiverId());
 
+                    var bytes = message.toByteArray();
+
                     var datagram = new DatagramPacket(
-                            messageJson.getBytes(),
-                            messageJson.length(),
+                            bytes,
+                            bytes.length,
                             sendTask.getReceiverAddress());
                     try {
                         socket.send(datagram);
-                        System.err.println("Send" + sendTask.getMessage().getType() + " on " + System.currentTimeMillis() + " to " + sendTask.getMessage().getReceiverId());
+                        System.err.println("Send" + message.getTypeCase() + " on " + System.currentTimeMillis() + " to " + sendTask.getMessage().getReceiverId());
                         // Todo test
                         System.err.println("81");
                         synchronized (this) {
                             repository.updateLastSentMessageTimeMillis(sendTask.getMessage().getReceiverId(), System.currentTimeMillis(), false);
                         }
                         System.err.println("83");
-                        if (!sendTask.getMessage().getType().equals(MessageType.ACK_MESSAGE) &&
-                                !sendTask.getMessage().getType().equals(MessageType.PING_MESSAGE)) {
+                        if (!sendTask.getMessage().getTypeCase().equals(ACK) &&
+                                !sendTask.getMessage().getTypeCase().equals(PING)) {
                             synchronized (waitResponseMessages) {
                                 waitResponseMessages.put(sendTask, System.currentTimeMillis());
                             }
@@ -104,32 +104,33 @@ public class NetworkActionsManager extends Thread {
                 byte[] datagramBuffer = new byte[5120]; // 5 Kb
                 var receivedPacket = new DatagramPacket(datagramBuffer, datagramBuffer.length);
                 socket.receive(receivedPacket);
-                String s = new String(datagramBuffer, 0, receivedPacket.getLength());
-                Message message = MessageParser.parseMessage(s);
-                System.err.println("Receive :" + message.getType() + " from " + message.getSenderId() + " time: " + System.currentTimeMillis());
-                // Todo Add response message in the queue
-                if (message.getType().equals(MessageType.ACK_MESSAGE)) {
+                // Todo test parsing
+                byte[] bytes = Arrays.copyOf(receivedPacket.getData(), receivedPacket.getLength());
+                SnakesProto.GameMessage message = SnakesProto.GameMessage.parseFrom(bytes);
+                System.err.println("Receive :" + message.getTypeCase() + " from " + message.getSenderId() + " time: " + System.currentTimeMillis());
+                if (message.getTypeCase().equals(ACK)) {
                     System.err.println("Receive ack sender: " + message.getSenderId() + " time: " + System.currentTimeMillis());
                     synchronized (waitResponseMessages) {
                         System.err.println("Ack sync");
                         waitResponseMessages.entrySet().removeIf(entry ->
-                                entry.getKey().getMessage().getMessageNumber() == message.getMessageNumber()
+                                entry.getKey().getMessage().getMsgSeq() == message.getMsgSeq()
                         );
                     }
-                } else if (!message.getType().equals(MessageType.ANNOUNCEMENT_MESSAGE) &&
-                        !message.getType().equals(MessageType.JOIN_MESSAGE) &&
-                        !message.getType().equals(MessageType.PING_MESSAGE)) {
+                } else if (!message.getTypeCase().equals(ANNOUNCEMENT) &&
+                        !message.getTypeCase().equals(JOIN) &&
+                        !message.getTypeCase().equals(PING)) {
                     // Todo test fake id!
                     synchronized (messagesQueue) {
                         System.err.println("message Queue 121");
+                        // Add Ack Message to queue
                         messagesQueue.addLast(new SendTask(
-                                new AckMessage(message.getMessageNumber(), myId, message.getSenderId()),
+                                messageFactory.createAckMessage(message.getMsgSeq(), myId, message.getSenderId()),
                                 receivedPacket.getSocketAddress()
                         ));
                         System.err.println("message Queue 126");
                     }
                 }
-                if (message.getType().equals(MessageType.JOIN_MESSAGE))
+                if (message.getTypeCase().equals(JOIN))
                     System.err.println("Receive join " + System.currentTimeMillis());
                 // Todo move handling in the top
                 var socketAddress = new InetSocketAddress(receivedPacket.getAddress(), receivedPacket.getPort());
@@ -143,9 +144,10 @@ public class NetworkActionsManager extends Thread {
             synchronized (multicastQueue) {
                 if (!multicastQueue.isEmpty()) {
                     var message = multicastQueue.pollFirst();
-                    var messageJson = gson.toJson(message);
-                    var datagram = new DatagramPacket(messageJson.getBytes(),
-                            messageJson.length(),
+                    var bytes = message.toByteArray();
+                    System.err.println("Multicast send: " + Arrays.toString(bytes));
+                    var datagram = new DatagramPacket(bytes,
+                            bytes.length,
                             MULTICAST_ADDRESS);
                     try {
                         socket.send(datagram);
@@ -161,16 +163,16 @@ public class NetworkActionsManager extends Thread {
 
     // Todo test synchronized
     public void putSendTask(SendTask message) {
-        System.err.println("Try to put " + message.getMessage().getType());
+        System.err.println("Try to put " + message.getMessage().getTypeCase());
         synchronized (messagesQueue) {
             System.err.println("162");
             messagesQueue.addLast(message);
-            // System.err.println("I put in queue " + message.getMessage().getType());
+            // System.err.println("I put in queue " + message.getMessage().getTypeCase());
             System.err.println("165");
         }
     }
 
-    public void putMulticast(AnnouncementMessage message) {
+    public void putMulticast(SnakesProto.GameMessage message) {
         synchronized (multicastQueue) {
             multicastQueue.addLast(message);
         }

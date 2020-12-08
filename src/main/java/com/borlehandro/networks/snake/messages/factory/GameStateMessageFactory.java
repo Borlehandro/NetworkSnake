@@ -2,12 +2,9 @@ package com.borlehandro.networks.snake.messages.factory;
 
 import com.borlehandro.networks.snake.model.Field;
 import com.borlehandro.networks.snake.model.FieldNode;
-import com.borlehandro.networks.snake.model.Snake;
-import com.borlehandro.networks.snake.model.Coordinates;
-import com.borlehandro.networks.snake.model.GameConfig;
 import com.borlehandro.networks.snake.model.Player;
-import com.borlehandro.networks.snake.messages.state.GameStateMessage;
-import com.borlehandro.networks.snake.messages.state.StateMessage;
+import com.borlehandro.networks.snake.model.Snake;
+import com.borlehandro.networks.snake.protobuf.SnakesProto;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -16,10 +13,10 @@ import java.util.stream.Collectors;
 /**
  * Be careful it's Singleton
  */
-public class GameStateMessageFactory implements StateMessageFactory {
+public class GameStateMessageFactory {
     // In-game entities
     private final Map<Integer, Snake> snakeMap;
-    private final GameConfig gameConfig;
+    private final SnakesProto.GameConfig gameConfig;
     private final Collection<Player> players;
     private final Field field;
     private final AtomicInteger stateOrder;
@@ -32,7 +29,7 @@ public class GameStateMessageFactory implements StateMessageFactory {
     }
 
     public static GameStateMessageFactory getInstance(Map<Integer, Snake> snakeMap,
-                                                      GameConfig gameConfig,
+                                                      SnakesProto.GameConfig gameConfig,
                                                       Collection<Player> players,
                                                       Field field,
                                                       AtomicInteger stateOrder) {
@@ -43,7 +40,7 @@ public class GameStateMessageFactory implements StateMessageFactory {
     }
 
     private GameStateMessageFactory(Map<Integer, Snake> snakeMap,
-                                    GameConfig gameConfig,
+                                    SnakesProto.GameConfig gameConfig,
                                     Collection<Player> players,
                                     Field field, AtomicInteger stateOrder) {
         this.snakeMap = snakeMap;
@@ -53,19 +50,72 @@ public class GameStateMessageFactory implements StateMessageFactory {
         this.stateOrder = stateOrder;
     }
 
-    @Override
-    public StateMessage getMessage(long messageNumber, int senderId, int receiverId) {
-        var snakes = List.copyOf(snakeMap.values());
+    public SnakesProto.GameMessage getMessage(long messageNumber, int senderId, int receiverId) {
+        // Todo write distance to the points!
+        var snakes = snakeMap.values().stream().map(
+                snake -> SnakesProto.GameState.Snake.newBuilder()
+                        .setState(switch (snake.getState()) {
+                            case ALIVE -> SnakesProto.GameState.Snake.SnakeState.ALIVE;
+                            case ZOMBIE -> SnakesProto.GameState.Snake.SnakeState.ZOMBIE;
+                        })
+                        .setPlayerId(snake.getPlayerId())
+                        .addAllPoints(snake.getBody().stream().map(snakeNode -> SnakesProto.GameState.Coord.newBuilder()
+                                .setX(snakeNode.getX())
+                                .setY(snakeNode.getY())
+                                .build())
+                                .collect(Collectors.toList()))
+                        .setHeadDirection(switch (snake.getBody().getFirst().getNodeDirection()) {
+                            case UP -> SnakesProto.Direction.UP;
+                            case DOWN -> SnakesProto.Direction.DOWN;
+                            case LEFT -> SnakesProto.Direction.LEFT;
+                            case RIGHT -> SnakesProto.Direction.RIGHT;
+                        })
+                        .build()
+        ).collect(Collectors.toList());
+
         List<FieldNode> fieldMatrix = new ArrayList<>();
+
         for (FieldNode[] row : field.getFieldMatrix()) {
             fieldMatrix.addAll(Arrays.asList(row));
         }
+
         var foodCoordinates = fieldMatrix
                 .stream()
                 .filter((fieldNode -> fieldNode.getState().equals(FieldNode.State.WITH_FOOD)))
-                .map(fieldNode -> new Coordinates(fieldNode.getX(), fieldNode.getY()))
+                .map(fieldNode -> SnakesProto.GameState.Coord.newBuilder().setX(fieldNode.getX()).setY(fieldNode.getY()).build())
                 .collect(Collectors.toList());
-        return new GameStateMessage(stateOrder.get(), snakes, foodCoordinates, players, gameConfig, messageNumber, senderId, receiverId);
-    }
 
+        var gamePlayers = SnakesProto.GamePlayers.newBuilder()
+                .addAllPlayers(players.stream().map(player ->
+                        SnakesProto.GamePlayer.newBuilder()
+                                .setName(player.getName())
+                                .setId(player.getId())
+                                .setIpAddress(player.getIpAddress())
+                                .setPort(player.getPort())
+                                .setScore(player.getScore())
+                                .setRole(switch (player.getRole()) {
+                                    case MASTER -> SnakesProto.NodeRole.MASTER;
+                                    case DEPUTY -> SnakesProto.NodeRole.DEPUTY;
+                                    case NORMAL -> SnakesProto.NodeRole.NORMAL;
+                                    case VIEWER -> SnakesProto.NodeRole.VIEWER;
+                                })
+                                .setType(SnakesProto.PlayerType.HUMAN)
+                                .build()).collect(Collectors.toList()))
+                .build();
+
+        return SnakesProto.GameMessage.newBuilder()
+                .setSenderId(senderId)
+                .setReceiverId(receiverId)
+                .setMsgSeq(messageNumber)
+                .setState(SnakesProto.GameMessage.StateMsg.newBuilder()
+                        .setState(SnakesProto.GameState.newBuilder()
+                                .addAllSnakes(snakes)
+                                .addAllFoods(foodCoordinates)
+                                .setPlayers(gamePlayers)
+                                .setConfig(gameConfig)
+                                .setStateOrder(stateOrder.get()))
+                        .build())
+                .build();
+        // GameStateMessage(stateOrder.get(), snakes, foodCoordinates, players, gameConfig, messageNumber, senderId, receiverId);
+    }
 }

@@ -2,12 +2,9 @@ package com.borlehandro.networks.snake.message_handlers;
 
 import com.borlehandro.networks.snake.game.repository.PlayersServersRepository;
 import com.borlehandro.networks.snake.game.session.ServerSession;
-import com.borlehandro.networks.snake.model.NodeRole;
 import com.borlehandro.networks.snake.model.Player;
-import com.borlehandro.networks.snake.messages.Message;
-import com.borlehandro.networks.snake.messages.action.JoinMessage;
-import com.borlehandro.networks.snake.messages.action.RoleChangeMessage;
-import com.borlehandro.networks.snake.messages.action.SteerMessage;
+import com.borlehandro.networks.snake.model.Snake;
+import com.borlehandro.networks.snake.protobuf.SnakesProto;
 
 import java.net.InetSocketAddress;
 
@@ -26,16 +23,22 @@ public class ServerMessagesHandler extends MessagesHandler {
             synchronized (tasksToHandle) {
                 if (!tasksToHandle.isEmpty()) {
                     var task = tasksToHandle.pollFirst();
-                    Message message = task.getMessage();
+                    SnakesProto.GameMessage message = task.getMessage();
                     InetSocketAddress socketAddress = task.getSocketAddress();
-                    switch (message.getType()) {
-                        case STEER_MESSAGE -> {
-                            SteerMessage m = (SteerMessage) message;
-                            System.err.println("Network rotate: " + m.getSenderId() + " to " + m.getDirection());
-                            session.rotate(m.getSenderId(), m.getDirection());
+                    switch (message.getTypeCase()) {
+                        case STEER -> {
+                            SnakesProto.GameMessage.SteerMsg m = message.getSteer();
+                            System.err.println("Network rotate: " + message.getSenderId() + " to " + m.getDirection());
+                            session.rotate(message.getSenderId(),
+                                    switch (m.getDirection()) {
+                                        case UP -> Snake.Direction.UP;
+                                        case DOWN -> Snake.Direction.DOWN;
+                                        case LEFT -> Snake.Direction.LEFT;
+                                        case RIGHT -> Snake.Direction.RIGHT;
+                                    });
                         }
-                        case JOIN_MESSAGE -> {
-                            JoinMessage m = (JoinMessage) message;
+                        case JOIN -> {
+                            SnakesProto.GameMessage.JoinMsg m = message.getJoin();
                             System.err.println("JOIN " + System.currentTimeMillis());
                             Player player = Player
                                     .builder()
@@ -44,7 +47,7 @@ public class ServerMessagesHandler extends MessagesHandler {
                                     .withPort(socketAddress.getPort())
                                     .build()
                                     .get();
-                            long messageNumber = m.getMessageNumber();
+                            long messageNumber = message.getMsgSeq();
                             // ...
                             synchronized (session) {
                                 // System.err.println("JOIN get session monitor" + System.currentTimeMillis());
@@ -52,17 +55,17 @@ public class ServerMessagesHandler extends MessagesHandler {
                             }
                             // System.err.println("JOIN END " + System.currentTimeMillis());
                         }
-                        case ROLE_CHANGE_MESSAGE -> {
-                            RoleChangeMessage roleChangeMessage = (RoleChangeMessage) message;
-                            if (roleChangeMessage.getSenderRole().equals(NodeRole.VIEWER)) {
+                        case ROLE_CHANGE -> {
+                            SnakesProto.GameMessage.RoleChangeMsg roleChangeMessage = message.getRoleChange();
+                            if (roleChangeMessage.getSenderRole().equals(SnakesProto.NodeRole.VIEWER)) {
                                 session.setViewer(message.getSenderId());
                             }
                             // Todo handle another role changes
                         }
-                        case PING_MESSAGE -> {
+                        case PING -> {
                             // System.err.println("PING: " + playersRepository.getLastReceivedMessageTimeMillis().get(message.getSenderId()));
                         }
-                        case ACK_MESSAGE -> {
+                        case ACK -> {
                             // System.err.println("ACK: " +  playersRepository.getLastReceivedMessageTimeMillis().get(message.getSenderId()));
                         }
                     }
@@ -71,7 +74,8 @@ public class ServerMessagesHandler extends MessagesHandler {
         }
     }
 
-    public void handleMessage(Message message, InetSocketAddress socketAddress) {
+    @Override
+    public void handleMessage(SnakesProto.GameMessage message, InetSocketAddress socketAddress) {
         synchronized (tasksToHandle) {
             tasksToHandle.addLast(new HandleTask(message, socketAddress));
         }

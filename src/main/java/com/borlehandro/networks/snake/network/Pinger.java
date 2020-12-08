@@ -1,8 +1,8 @@
 package com.borlehandro.networks.snake.network;
 
-import com.borlehandro.networks.snake.model.GameConfig;
+import com.borlehandro.networks.snake.messages.factory.MessageFactory;
 import com.borlehandro.networks.snake.model.SendTask;
-import com.borlehandro.networks.snake.messages.action.PingMessage;
+import com.borlehandro.networks.snake.protobuf.SnakesProto;
 
 import java.net.SocketAddress;
 import java.util.Map;
@@ -19,8 +19,8 @@ public class Pinger extends Thread {
     private final Function<Integer, SocketAddress> getAddressFunction;
 
     // TODO Refactor all this code
-    public Pinger(GameConfig config, NetworkActionsManager manager, int senderId, Map<Integer, Long> lastSentMessageTime, Function<Integer, SocketAddress> getAddressFunction) {
-        pingDelayMillis = config.getPingDelayMillis();
+    public Pinger(SnakesProto.GameConfig config, NetworkActionsManager manager, int senderId, Map<Integer, Long> lastSentMessageTime, Function<Integer, SocketAddress> getAddressFunction) {
+        pingDelayMillis = config.getPingDelayMs();
         this.manager = manager;
         this.senderId = senderId;
         this.lastSentMessageTime = lastSentMessageTime;
@@ -39,7 +39,7 @@ public class Pinger extends Thread {
                                     // Todo Test ping fix
                                     manager.putSendTask(
                                             new SendTask(
-                                                    new PingMessage(MessagesCounter.next(), senderId, key),
+                                                    MessageFactory.getInstance().createPingMessage(MessagesCounter.next(), senderId, key),
                                                     getAddressFunction.apply(key)));
                                 }
                             }

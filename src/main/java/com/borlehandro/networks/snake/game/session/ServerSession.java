@@ -1,24 +1,17 @@
 package com.borlehandro.networks.snake.game.session;
 
-import com.borlehandro.networks.snake.game.api.Session;
-import com.borlehandro.networks.snake.game.repository.PlayersServersRepository;
 import com.borlehandro.networks.snake.game.CollisionHandler;
 import com.borlehandro.networks.snake.game.MoveController;
 import com.borlehandro.networks.snake.game.SnakesCollisionController;
+import com.borlehandro.networks.snake.game.api.Session;
+import com.borlehandro.networks.snake.game.repository.PlayersServersRepository;
 import com.borlehandro.networks.snake.game.spawn.FoodSpawner;
 import com.borlehandro.networks.snake.game.spawn.SnakeSpawner;
 import com.borlehandro.networks.snake.message_handlers.ServerMessagesHandler;
-import com.borlehandro.networks.snake.model.Field;
-import com.borlehandro.networks.snake.model.Snake;
+import com.borlehandro.networks.snake.messages.factory.MessageFactory;
+import com.borlehandro.networks.snake.model.*;
 import com.borlehandro.networks.snake.network.*;
-import com.borlehandro.networks.snake.model.GameConfig;
-import com.borlehandro.networks.snake.model.NodeRole;
-import com.borlehandro.networks.snake.model.Player;
-import com.borlehandro.networks.snake.model.SendTask;
-import com.borlehandro.networks.snake.messages.action.AckMessage;
-import com.borlehandro.networks.snake.messages.action.ErrorMessage;
-import com.borlehandro.networks.snake.messages.action.RoleChangeMessage;
-import com.borlehandro.networks.snake.messages.factory.GameStateMessageFactory;
+import com.borlehandro.networks.snake.protobuf.SnakesProto;
 import com.borlehandro.networks.snake.ui.GameUiController;
 
 import java.net.InetSocketAddress;
@@ -27,20 +20,21 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.borlehandro.networks.snake.protobuf.SnakesProto.NodeRole.*;
+
 public class ServerSession implements Session {
     private GameUiController uiController;
     private final PlayersServersRepository playersRepository = PlayersServersRepository.getInstance();
     private final Map<Integer, Snake> snakeMap;
     private final Map<Integer, Snake.Direction> rotationsPool = new HashMap<>();
     private final Field field;
-    private final GameConfig config;
+    private final SnakesProto.GameConfig config;
     private final MoveController moveController;
-    private final GameStateMessageFactory gameStateMessageFactory;
     private final SnakesCollisionController collisionController;
     private final FoodSpawner foodSpawner;
     private final SnakeSpawner snakeSpawner;
     private CollisionHandler collisionHandler;
-
+    private final MessageFactory messageFactory = MessageFactory.getInstance();
     private NetworkActionsManager networkManager;
     private ServerMessagesHandler messagesHandler;
     private OfflineMonitor offlineMonitor;
@@ -52,24 +46,23 @@ public class ServerSession implements Session {
     private final AtomicInteger stateOrder = new AtomicInteger(0);
     private int deputyId = -1;
 
-    public ServerSession(GameConfig config) {
+    public ServerSession(SnakesProto.GameConfig config) {
         this.config = config;
-        field = new Field(config.getFieldHeight(), config.getFieldWidth());
+        field = new Field(config.getHeight(), config.getWidth());
         snakeMap = new HashMap<>();
         moveController = new MoveController(field);
         collisionController = new SnakesCollisionController(field, snakeMap.values(), config);
         foodSpawner = new FoodSpawner(field, config);
         snakeSpawner = new SnakeSpawner(field, snakeMap);
-        gameStateMessageFactory = GameStateMessageFactory.getInstance(
-                snakeMap,
+        messageFactory.initGameStateMessageFactory(snakeMap,
                 config,
                 playersRepository.getPlayers(),
                 field,
-                stateOrder
-        );
+                stateOrder);
+        messageFactory.initAnnouncementMessageFactory(playersRepository.getPlayers(), config);
     }
 
-    public ServerSession(GameConfig config, Map<Integer, Snake> snakeMap, Field field) {
+    public ServerSession(SnakesProto.GameConfig config, Map<Integer, Snake> snakeMap, Field field) {
         this.config = config;
         this.field = field;
         this.snakeMap = snakeMap;
@@ -77,7 +70,7 @@ public class ServerSession implements Session {
         collisionController = new SnakesCollisionController(this.field, this.snakeMap.values(), this.config);
         foodSpawner = new FoodSpawner(this.field, this.config);
         snakeSpawner = new SnakeSpawner(this.field, this.snakeMap);
-        gameStateMessageFactory = GameStateMessageFactory.getInstance(
+        messageFactory.initGameStateMessageFactory(
                 this.snakeMap,
                 this.config,
                 playersRepository.getPlayers(),
@@ -102,9 +95,17 @@ public class ServerSession implements Session {
         // Todo test
         var opt = playersRepository.getPlayers().stream().filter(player -> player.getId() > 0).findAny();
         opt.ifPresent(player ->
-                networkManager.putSendTask(new SendTask(new RoleChangeMessage(
-                        NodeRole.MASTER, NodeRole.DEPUTY, MessagesCounter.next(), 0, player.getId()
-                ), playersRepository.findPlayerAddressById(player.getId()).get()))
+                networkManager.putSendTask(
+                        new SendTask(
+                                SnakesProto.GameMessage.newBuilder()
+                                        .setSenderId(0)
+                                        .setReceiverId(player.getId())
+                                        .setMsgSeq(MessagesCounter.next())
+                                        .setRoleChange(SnakesProto.GameMessage.RoleChangeMsg.newBuilder()
+                                                .setSenderRole(MASTER)
+                                                .setReceiverRole(DEPUTY).build())
+                                        .build(),
+                                playersRepository.findPlayerAddressById(player.getId()).get()))
         );
         init();
     }
@@ -164,7 +165,7 @@ public class ServerSession implements Session {
                 System.err.println("156 " + System.currentTimeMillis());
                 playersRepository.updateLastReceivedMessageTimeMillis(
                         player.getId(),
-                        System.currentTimeMillis() + config.getStateDelayMillis(),
+                        System.currentTimeMillis() + config.getStateDelayMs(),
                         true
                 );
                 System.err.println("162 " + System.currentTimeMillis());
@@ -173,18 +174,21 @@ public class ServerSession implements Session {
                     // Todo Is my id always 0?
                     // Player id is always -1
                     player.setRole(NodeRole.VIEWER);
-                    networkManager.putSendTask(new SendTask(new ErrorMessage("Can not add player. You are viewer",
-                            MessagesCounter.next(),
-                            0,
-                            player.getId()),
-                            playersRepository.findPlayerAddressById(player.getId()).get()));
+                    networkManager.putSendTask(new SendTask(
+                            messageFactory.createErrorMessage(
+                                    MessagesCounter.next(),
+                                    0,
+                                    player.getId(),
+                                    "Can not add player. You are viewer"),
+                            playersRepository.findPlayerAddressById(player.getId()).get()
+                    ));
                 } else {
                     System.err.println("Add successful " + player.getId());
                     player.setRole(NodeRole.NORMAL);
                     // Dont send message to myself
                     if (player.getId() != 0) {
                         networkManager.putSendTask(new SendTask(
-                                new AckMessage(messageNumber, 0, player.getId()),
+                                messageFactory.createAckMessage(messageNumber, 0, player.getId()),
                                 playersRepository.findPlayerAddressById(player.getId()).get()
                         ));
                         // Todo test
@@ -192,7 +196,7 @@ public class ServerSession implements Session {
                             deputyId = player.getId();
                             System.err.println("Set deputy: " + deputyId);
                             networkManager.putSendTask(new SendTask(
-                                    new RoleChangeMessage(NodeRole.MASTER, NodeRole.DEPUTY, MessagesCounter.next(), 0, player.getId()),
+                                    messageFactory.createRoleChangeMessage(MessagesCounter.next(), 0, player.getId(), MASTER, DEPUTY),
                                     playersRepository.findPlayerAddressById(player.getId()).get()
                             ));
                         }
@@ -231,7 +235,7 @@ public class ServerSession implements Session {
                 playersRepository.getPlayersCopy().forEach(player -> {
                             if (player.getId() != 0) {
                                 networkManager.putSendTask(new SendTask(
-                                        gameStateMessageFactory.getMessage(MessagesCounter.next(), 0, player.getId()),
+                                        messageFactory.createStateMessage(MessagesCounter.next(), 0, player.getId()),
                                         new InetSocketAddress(player.getIpAddress(), player.getPort())
                                 ));
                             }
@@ -242,9 +246,10 @@ public class ServerSession implements Session {
                 //  I must start next clock step when this step will be completed
             }
         }
-        // Test UI
-        uiController.onStateUpdate(field, playersRepository.getPlayersMap());
-
+        if (uiController != null) {
+            // Test UI
+            uiController.onStateUpdate(field, playersRepository.getPlayersMap());
+        }
         // Test only
         // Field showing
         var matrix = field.getFieldMatrix();
@@ -282,12 +287,12 @@ public class ServerSession implements Session {
             var opt = playersRepository.findPlayerAddressById(playerId);
             opt.ifPresent(socketAddress -> {
                         networkManager.putSendTask(new SendTask(
-                                new RoleChangeMessage(NodeRole.MASTER, NodeRole.VIEWER, MessagesCounter.next(), 0, playerId),
+                                messageFactory.createRoleChangeMessage(MessagesCounter.next(), 0, playerId, MASTER, VIEWER),
                                 socketAddress
                         ));
                         if (playerId == deputyId) {
                             networkManager.putSendTask(new SendTask(
-                                    new RoleChangeMessage(NodeRole.MASTER, NodeRole.DEPUTY, MessagesCounter.next(), 0, playerId),
+                                    messageFactory.createRoleChangeMessage(MessagesCounter.next(), 0, playerId, MASTER, DEPUTY),
                                     socketAddress
                             ));
                             // O_o
@@ -316,7 +321,7 @@ public class ServerSession implements Session {
                         if (opt.isPresent()) {
                             deputyId = opt.get().getId();
                             networkManager.putSendTask(new SendTask(
-                                    new RoleChangeMessage(NodeRole.MASTER, NodeRole.DEPUTY, MessagesCounter.next(), 0, deputyId),
+                                    messageFactory.createRoleChangeMessage(MessagesCounter.next(), 0, deputyId, MASTER, DEPUTY),
                                     playersRepository.findPlayerAddressById(deputyId).get()
                             ));
                         } else {
@@ -343,7 +348,7 @@ public class ServerSession implements Session {
     public void setViewer(int playerId) {
         synchronized (playersRepository) {
             networkManager.putSendTask(new SendTask(
-                    new RoleChangeMessage(NodeRole.MASTER, NodeRole.VIEWER, MessagesCounter.next(), 0, playerId),
+                    messageFactory.createRoleChangeMessage(MessagesCounter.next(), 0, playerId, MASTER, VIEWER),
                     playersRepository.findPlayerAddressById(playerId).get()
             ));
             synchronized (snakeMap) {
@@ -358,7 +363,7 @@ public class ServerSession implements Session {
         System.err.println("EXIT");
         if (deputyId != -1) {
             networkManager.putSendTask(new SendTask(
-                    new RoleChangeMessage(NodeRole.MASTER, NodeRole.MASTER, MessagesCounter.next(), 0, deputyId),
+                    messageFactory.createRoleChangeMessage(MessagesCounter.next(), 0, deputyId, MASTER, MASTER),
                     playersRepository.findPlayerAddressById(deputyId).get()
             ));
         }
@@ -377,5 +382,4 @@ public class ServerSession implements Session {
     public void setController(GameUiController controller) {
         uiController = controller;
     }
-
 }

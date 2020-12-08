@@ -1,20 +1,20 @@
 package com.borlehandro.networks.snake.message_handlers;
 
-import com.borlehandro.networks.snake.messages.Message;
+import com.borlehandro.networks.snake.protobuf.SnakesProto;
 
 import java.net.InetSocketAddress;
 
 // Public - debug only
 public class HandleTask {
-    private final Message message;
+    private final SnakesProto.GameMessage message;
     private final InetSocketAddress socketAddress;
 
-    HandleTask(Message message, InetSocketAddress socketAddress) {
+    HandleTask(SnakesProto.GameMessage message, InetSocketAddress socketAddress) {
         this.message = message;
         this.socketAddress = socketAddress;
     }
 
-    public Message getMessage() {
+    public SnakesProto.GameMessage getMessage() {
         return message;
     }
 

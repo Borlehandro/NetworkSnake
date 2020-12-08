@@ -3,7 +3,7 @@ package com.borlehandro.networks.snake.game.spawn;
 import com.borlehandro.networks.snake.game.repository.PlayersServersRepository;
 import com.borlehandro.networks.snake.model.Field;
 import com.borlehandro.networks.snake.model.FieldNode;
-import com.borlehandro.networks.snake.model.GameConfig;
+import com.borlehandro.networks.snake.protobuf.SnakesProto;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,10 +13,10 @@ import java.util.List;
 public class FoodSpawner {
     private final Field field;
     private final int staticFood;
-    private final int foodPerPlayer;
+    private final float foodPerPlayer;
     private final PlayersServersRepository repository = PlayersServersRepository.getInstance();
 
-    public FoodSpawner(Field field, GameConfig config) {
+    public FoodSpawner(Field field, SnakesProto.GameConfig config) {
         this.field = field;
         staticFood = config.getFoodStatic();
         foodPerPlayer = config.getFoodPerPlayer();
@@ -43,7 +43,7 @@ public class FoodSpawner {
         try {
             matrixCopy.stream()
                     .filter(fieldNode -> fieldNode.getState().equals(FieldNode.State.EMPTY))
-                    .limit((staticFood + foodPerPlayer * repository.getPlayersNumber()) - field.getCurrentFood())
+                    .limit((int)(staticFood + foodPerPlayer * repository.getPlayersNumber()) - field.getCurrentFood())
                     .forEach(fieldNode -> {
                         fieldNode.setState(FieldNode.State.WITH_FOOD);
                         field.addFood(1);
